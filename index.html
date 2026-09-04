@@ -6,7 +6,7 @@
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
     <style>
-        /* ... (все стили из исходного кода, включая добавленные стили плеера) ... */
+        /* ... (все стили из исходного кода) ... */
         body {
             margin: 0; padding: 0;
             background: #050000;
@@ -82,13 +82,12 @@
             --current-img: url('https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png');
         }
 
-        /* Новый слой тусклого красного свечения */
         #biohazard-wrapper .glow {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: radial-gradient(circle, rgba(255,0,0,0.3) 0%, rgba(255,0,0,0.1) 50%, transparent 70%);
             z-index: -1;
-            filter: blur(20px); /* Мягкое размытие */
+            filter: blur(20px);
         }
 
         #biohazard-img {
@@ -388,6 +387,82 @@
             text-align: center;
             color: #a83232;
         }
+
+        /* ===== МЕДИА-ЗАПРОС ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
+        @media (max-width: 768px) {
+            .window {
+                min-width: 0;
+                width: calc(100% - 10px);
+                left: 5px !important;
+                top: 5px !important;
+                max-height: 90vh;
+                height: auto;
+            }
+
+            #main-window, #armory-window, #bio-window {
+                left: 5px !important;
+                top: 5px !important;
+                width: calc(100% - 10px) !important;
+                height: 90vh !important;
+            }
+
+            .window.minimized {
+                width: 200px;
+                height: 40px;
+                left: 5px;
+                top: 5px;
+            }
+
+            .window-body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .window-title {
+                font-size: 1.2rem;
+            }
+
+            .status-line,
+            .bio,
+            .command-list {
+                font-size: 1.2rem;
+            }
+
+            .terminal-input {
+                font-size: 1.2rem;
+                width: 120px;
+            }
+
+            #heart-bg {
+                width: 200px;
+                height: 200px;
+            }
+
+            #biohazard-wrapper {
+                width: 90vw;
+                height: 70vh;
+            }
+
+            #custom-player {
+                width: 100%;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+            }
+
+            .avatar {
+                width: 90px;
+                height: 90px;
+                margin-right: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -602,25 +677,28 @@
         element.style.zIndex = zIndexCounter;
     }
 
+    // Перетаскивание окон: отключено на мобильных
     windows.forEach(win => {
-        const header = win.querySelector('.window-header');
-        header.addEventListener('mousedown', (e) => {
-            bringToFront(win);
-            let shiftX = e.clientX - win.getBoundingClientRect().left;
-            let shiftY = e.clientY - win.getBoundingClientRect().top;
+        if (window.innerWidth > 768) {
+            const header = win.querySelector('.window-header');
+            header.addEventListener('mousedown', (e) => {
+                bringToFront(win);
+                let shiftX = e.clientX - win.getBoundingClientRect().left;
+                let shiftY = e.clientY - win.getBoundingClientRect().top;
 
-            function moveAt(e) {
-                win.style.left = e.clientX - shiftX + 'px';
-                win.style.top = e.clientY - shiftY + 'px';
-            }
+                function moveAt(e) {
+                    win.style.left = e.clientX - shiftX + 'px';
+                    win.style.top = e.clientY - shiftY + 'px';
+                }
 
-            function onMouseMove(e) { moveAt(e); }
+                function onMouseMove(e) { moveAt(e); }
 
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', () => {
-                document.removeEventListener('mousemove', onMouseMove);
-            }, { once: true });
-        });
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                }, { once: true });
+            });
+        }
     });
 
     function openWindow(id) {
@@ -631,6 +709,14 @@
         void win.offsetWidth;
         win.classList.add('open-animation');
         bringToFront(win);
+
+        // Адаптация под мобильные: растягиваем окно на весь экран
+        if (window.innerWidth <= 768) {
+            win.style.left = '5px';
+            win.style.top = '5px';
+            win.style.width = 'calc(100% - 10px)';
+            win.style.height = '90vh';
+        }
 
         const lock = win.querySelector('.lock-overlay');
         lock.style.display = 'flex';
