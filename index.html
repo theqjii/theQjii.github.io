@@ -6,17 +6,47 @@
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
     <style>
-        /* ... (все стили из исходного кода) ... */
+        :root {
+            --bg-dark: #050000;
+            --bg-window: rgba(20, 0, 0, 0.95);
+            --border: #8b0000;
+            --accent: #ff0000;
+            --text: #e57373;
+            --text-bright: #ff8080;
+            --text-dim: #a83232;
+            --text-dark: #b83232;
+            --highlight: #ff3333;
+            --bg-header: #2a0000;
+            --bg-item: #2a0000;
+            --bg-input: #2a0000;
+        }
+
+        body.theme-green {
+            --bg-dark: #001a00;
+            --bg-window: rgba(0, 20, 0, 0.95);
+            --border: #00b300;
+            --accent: #00ff00;
+            --text: #66ff66;
+            --text-bright: #99ff99;
+            --text-dim: #4d994d;
+            --text-dark: #4d994d;
+            --highlight: #33ff33;
+            --bg-header: #002200;
+            --bg-item: #002200;
+            --bg-input: #002200;
+        }
+
         body {
             margin: 0; padding: 0;
-            background: #050000;
-            background-image: radial-gradient(circle at center, #2b0000 0%, #050000 100%),
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at center, var(--border) 0%, var(--bg-dark) 100%),
                 repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            color: #e57373;
+            color: var(--text);
             font-family: 'VT323', monospace;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
+            transition: background 0.3s, color 0.3s;
         }
         
         body::after {
@@ -25,7 +55,6 @@
             opacity: 0.1; pointer-events: none; z-index: 1000;
         }
 
-        /* --- ФОНОВОЕ ИЗОБРАЖЕНИЕ С БИЕНИЕМ СЕРДЦА --- */
         #heart-bg {
             position: fixed;
             top: 50%;
@@ -56,11 +85,10 @@
             100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(255,0,0,0.5)); }
         }
 
-        /* --- ИНТРО (Глитч-Кор и чередование) --- */
         #intro-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #050000;
+            background: var(--bg-dark);
             display: flex; justify-content: center; align-items: center;
             z-index: 9999;
             opacity: 1;
@@ -85,9 +113,10 @@
         #biohazard-wrapper .glow {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle, rgba(255,0,0,0.3) 0%, rgba(255,0,0,0.1) 50%, transparent 70%);
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
             z-index: -1;
             filter: blur(20px);
+            opacity: 0.3;
         }
 
         #biohazard-img {
@@ -114,19 +143,19 @@
 
         #biohazard-wrapper::before {
             opacity: 0.9;
-            filter: drop-shadow(15px 0 0 rgba(255,0,0,1));
+            filter: drop-shadow(15px 0 0 var(--accent));
             animation: glitch-anim-1 1.2s infinite steps(3, end);
         }
         #biohazard-wrapper::after {
             opacity: 0.9;
-            filter: drop-shadow(-15px 0 0 rgba(0,255,255,1));
+            filter: drop-shadow(-15px 0 0 var(--highlight));
             animation: glitch-anim-2 1.2s infinite steps(3, end);
         }
 
         @keyframes fade-from-dark {
             0% { opacity: 0; filter: brightness(0) blur(10px); transform: scale(0.7); }
             50% { opacity: 1; filter: brightness(1.2) blur(0); transform: scale(1.05); }
-            100% { opacity: 1; filter: brightness(1) blur(0) drop-shadow(0 0 30px rgba(255,0,0,0.4)); transform: scale(1); }
+            100% { opacity: 1; filter: brightness(1) blur(0) drop-shadow(0 0 30px var(--accent)); transform: scale(1); }
         }
 
         @keyframes glitch-anim-1 {
@@ -158,20 +187,19 @@
 
         @keyframes glitch-out {
             0% { clip-path: inset(0 0 0 0); }
-            20% { clip-path: inset(10% 0 80% 0); transform: translate(-10px, 0); box-shadow: 5px 0 #ff0000; }
-            40% { clip-path: inset(80% 0 5% 0); transform: translate(10px, 0); box-shadow: -5px 0 #00ffff; }
+            20% { clip-path: inset(10% 0 80% 0); transform: translate(-10px, 0); box-shadow: 5px 0 var(--accent); }
+            40% { clip-path: inset(80% 0 5% 0); transform: translate(10px, 0); box-shadow: -5px 0 var(--highlight); }
             60% { clip-path: inset(30% 0 50% 0); transform: translate(-5px, 0); }
             100% { opacity: 0; clip-path: inset(100% 0 0 0); }
         }
 
-        /* --- РАБОЧИЙ СТОЛ И ОКНА --- */
         #desktop { position: relative; width: 100%; height: 100%; }
 
         .window {
             position: absolute;
-            background: rgba(20, 0, 0, 0.95);
-            border: 3px solid #8b0000;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(0,0,0,0.8);
+            background: var(--bg-window);
+            border: 3px solid var(--border);
+            box-shadow: 0 0 20px var(--border), inset 0 0 30px rgba(0,0,0,0.8);
             min-width: 350px;
             display: none;
             flex-direction: column;
@@ -206,63 +234,180 @@
         }
 
         .window-header {
-            background: #2a0000;
-            border-bottom: 2px solid #8b0000;
+            background: var(--bg-header);
+            border-bottom: 2px solid var(--border);
             padding: 8px 10px;
             display: flex; justify-content: space-between; align-items: center;
             cursor: move; user-select: none;
         }
-        .window-title { color: #ff0000; text-shadow: 0 0 5px #990000; font-size: 1.5rem; }
+        .window-title { color: var(--accent); text-shadow: 0 0 5px var(--border); font-size: 1.5rem; }
         .window-controls { display: flex; gap: 5px; }
         .btn {
-            width: 25px; height: 25px; background: #8b0000; border: 1px solid #000;
+            width: 25px; height: 25px; background: var(--border); border: 1px solid #000;
             color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem;
             text-align: center; line-height: 23px; cursor: pointer; transition: 0.2s;
         }
-        .btn:hover { background: #ff0000; color: #000; box-shadow: 0 0 10px #ff0000; }
+        .btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 10px var(--accent); }
 
         .window-body { padding: 20px; overflow-y: auto; max-height: 80vh; position: relative; }
         
         #main-window { left: 50px; top: 50px; width: 600px; display: none; }
 
-        h1 { font-size: 3rem; margin: 0 0 10px 0; color: #ff0000; text-shadow: 2px 2px 0 #000, 0 0 10px #990000; }
-        .status-line { color: #a83232; font-size: 1.4rem; border-bottom: 1px dashed #8b0000; padding-bottom: 10px; margin-bottom: 20px; }
-        .status-line span { color: #ff3333; }
-        .avatar { width: 120px; height: 120px; background: #2a0000; border: 2px solid #8b0000; overflow: hidden; float: left; margin-right: 20px; filter: grayscale(10%) contrast(130%) sepia(100%) hue-rotate(-50deg) saturate(300%); }
+        h1 { font-size: 3rem; margin: 0 0 10px 0; color: var(--accent); text-shadow: 2px 2px 0 #000, 0 0 10px var(--border); }
+        .status-line { color: var(--text-dim); font-size: 1.4rem; border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+        .status-line span { color: var(--highlight); }
+        .avatar { width: 120px; height: 120px; background: var(--bg-header); border: 2px solid var(--border); overflow: hidden; float: left; margin-right: 20px; filter: grayscale(10%) contrast(130%) sepia(100%) hue-rotate(-50deg) saturate(300%); }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
         .type-cursor::after {
             content: "▌";
-            color: #ff0000;
+            color: var(--accent);
             animation: blink 0.7s step-end infinite;
         }
 
-        .bio { font-size: 1.3rem; line-height: 1.4; color: #ff8080; }
-        .death-quote { clear: both; margin-top: 20px; text-align: center; font-size: 1.8rem; color: #ff0000; text-shadow: 0 0 15px #ff0000; transform: rotate(-2deg); }
-        .death-quote small { font-size: 1rem; color: #8b0000; }
+        .bio { font-size: 1.3rem; line-height: 1.4; color: var(--text-bright); }
+        .death-quote { clear: both; margin-top: 20px; text-align: center; font-size: 1.8rem; color: var(--accent); text-shadow: 0 0 15px var(--accent); transform: rotate(-2deg); }
+        .death-quote small { font-size: 1rem; color: var(--border); }
 
-        .command-list { margin-top: 20px; border-top: 1px dashed #8b0000; padding-top: 15px; font-size: 1.3rem; color: #b83232; }
-        .command-list span { color: #ff8080; }
-        .command-list code { background: #2a0000; padding: 2px 5px; border: 1px solid #8b0000; }
+        .command-list { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; font-size: 1.3rem; color: var(--text-dark); }
+        .command-list span { color: var(--text-bright); }
+        .command-list code { background: var(--bg-header); padding: 2px 5px; border: 1px solid var(--border); transition: background 0.3s, color 0.3s; }
+        .command-list code.active-command {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
 
         .cmd-container { margin-top: 15px; text-align: center; }
-        .terminal-input { background: transparent; border: none; border-bottom: 1px dashed #8b0000; color: #ff0000; font-family: 'VT323', monospace; font-size: 1.3rem; width: 150px; outline: none; text-align: center; }
-        .terminal-input:focus { border-bottom: 1px solid #ff0000; }
+        .terminal-input { background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--accent); font-family: 'VT323', monospace; font-size: 1.3rem; width: 150px; outline: none; text-align: center; }
+        .terminal-input:focus { border-bottom: 1px solid var(--accent); }
         .cursor { animation: blink 1s step-end infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
         #armory-window { left: 20%; top: 15%; width: 700px; }
         #bio-window { left: 30%; top: 25%; width: 400px; }
+        #radio-window { left: 25%; top: 20%; width: 500px; }
         
         .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .project-item { background: #2a0000; border: 2px solid #8b0000; padding: 10px; transition: 0.3s; }
-        .project-item:hover { border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
-        .project-item img { width: 100%; height: 150px; object-fit: cover; border: 1px solid #500000; filter: grayscale(100%) contrast(120%); }
+        .project-item { background: var(--bg-header); border: 2px solid var(--border); padding: 10px; transition: 0.3s; }
+        .project-item:hover { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        .project-item img { width: 100%; height: 150px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(100%) contrast(120%); }
         .project-item:hover img { filter: grayscale(0%) contrast(100%); }
-        .project-item p { text-align: center; color: #ff8080; }
+        .project-item p { text-align: center; color: var(--text-bright); }
 
-        .links a { display: block; background: #2a0000; border: 2px solid #8b0000; color: #ff8080; text-decoration: none; padding: 15px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; transition: 0.3s; }
-        .links a:hover { background: #ff0000; color: #000; border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
+        /* Комментарии */
+        .comments-section {
+            margin-top: 15px;
+            border-top: 1px dashed var(--border);
+            padding-top: 10px;
+        }
+        .comments-section h4 {
+            margin: 0 0 10px;
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+        .comment-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 5px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+        }
+        .comment-item {
+            background: rgba(0,0,0,0.3);
+            padding: 3px 8px;
+            margin-bottom: 5px;
+            font-size: 1rem;
+            color: var(--text-bright);
+            border-left: 3px solid var(--border);
+            word-break: break-word;
+        }
+        .comment-item .comment-author {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .comment-input-row {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .comment-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed var(--border);
+            color: var(--text);
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            outline: none;
+            padding: 5px;
+        }
+        .comment-input:focus {
+            border-bottom: 1px solid var(--accent);
+        }
+        .comment-btn {
+            background: var(--border);
+            border: 1px solid #000;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .comment-btn:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        .nickname-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .nickname-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed var(--border);
+            color: var(--accent);
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            outline: none;
+            padding: 5px;
+        }
+        .nickname-input:focus {
+            border-bottom: 1px solid var(--accent);
+        }
+
+        .like-btn {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text-bright);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            padding: 5px 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .like-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .like-btn.liked {
+            background: var(--border);
+            color: #fff;
+        }
+
+        .links a { display: block; background: var(--bg-header); border: 2px solid var(--border); color: var(--text-bright); text-decoration: none; padding: 15px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; transition: 0.3s; }
+        .links a:hover { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
 
         .lock-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -271,7 +416,7 @@
         }
         .lock-icon {
             width: 120px; height: 120px;
-            filter: drop-shadow(0 0 25px #ff0000);
+            filter: drop-shadow(0 0 25px var(--accent));
             animation: lock-open 1.2s ease-in-out forwards;
         }
         .lock-icon img { width: 100%; height: 100%; object-fit: contain; }
@@ -284,111 +429,128 @@
             100% { transform: scale(0.2) rotate(180deg); opacity: 0; }
         }
 
-        /* ===== НОВЫЕ СТИЛИ ДЛЯ ПЛЕЕРА ===== */
-        #custom-player {
+        /* ===== ПК-ФИЧИ ===== */
+        #theme-toggle {
             position: fixed;
+            left: 20px;
             bottom: 20px;
-            right: 20px;
-            width: 300px;
-            background: rgba(20, 0, 0, 0.95);
-            border: 3px solid #8b0000;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(0,0,0,0.8);
-            z-index: 10000;
-            padding: 15px;
+            background: var(--bg-header);
+            border: 2px solid var(--border);
+            color: var(--text);
             font-family: 'VT323', monospace;
-            color: #ff8080;
+            font-size: 1.2rem;
+            padding: 8px 12px;
+            cursor: pointer;
+            z-index: 10001;
+            transition: 0.3s;
+        }
+        #theme-toggle:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        #event-log {
+            position: fixed;
+            left: 20px;
+            bottom: 70px;
+            width: 300px;
+            max-height: 150px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid var(--border);
+            padding: 10px;
+            font-size: 1.1rem;
+            color: var(--text-bright);
+            overflow-y: auto;
+            z-index: 10001;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 5px;
         }
-
-        #custom-player .player-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #8b0000;
+        #event-log .log-header {
+            font-weight: bold;
+            color: var(--accent);
+            border-bottom: 1px dashed var(--border);
             padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+        #event-log .log-entry {
+            background: rgba(0,0,0,0.2);
+            padding: 2px 5px;
+            border-left: 3px solid var(--border);
+            animation: fadeInLog 0.5s;
+        }
+        @keyframes fadeInLog {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        #custom-player .player-title {
-            color: #ff0000;
-            text-shadow: 0 0 5px #990000;
-            font-size: 1.5rem;
-            cursor: default;
-        }
-
-        #custom-player .player-close {
-            background: #8b0000;
-            border: 1px solid #000;
-            color: #fff;
-            width: 25px;
-            height: 25px;
-            text-align: center;
-            line-height: 23px;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-        
-        #custom-player .player-close:hover {
-            background: #ff0000;
-            color: #000;
-            box-shadow: 0 0 10px #ff0000;
-        }
-
-        #custom-player audio {
-            width: 100%;
-            height: 35px;
-            background: transparent;
-            color: #ff8080;
-            outline: none;
-            border: 1px solid #8b0000;
-        }
-
-        #custom-player .controls {
-            display: flex;
-            justify-content: space-between;
+        #loading-bar {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 30px;
+            background: var(--bg-header);
+            border: 2px solid var(--border);
+            z-index: 10002;
+            display: none;
             align-items: center;
+            padding: 2px;
         }
-
-        #custom-player .btn-control {
-            background: #2a0000;
-            border: 2px solid #8b0000;
-            color: #ff8080;
-            width: 50px;
-            height: 35px;
-            text-align: center;
-            line-height: 31px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: 0.2s;
+        #loading-bar .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.1s;
         }
-        
-        #custom-player .btn-control:hover {
-            background: #ff0000;
-            color: #000;
-            border-color: #ff0000;
-            box-shadow: 0 0 10px #ff0000;
-        }
-
-        #custom-player .volume-slider {
+        #loading-bar .loading-text {
+            position: absolute;
             width: 100%;
-            accent-color: #ff0000;
-            cursor: pointer;
-        }
-
-        #custom-player .progress-bar {
-            width: 100%;
-            accent-color: #ff0000;
-            cursor: pointer;
-        }
-
-        #custom-player .time-display {
-            font-size: 1rem;
             text-align: center;
-            color: #a83232;
+            color: var(--text);
+            font-size: 1.2rem;
+            text-shadow: 1px 1px #000;
         }
 
-        /* ===== МЕДИА-ЗАПРОС ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
+        #radiation-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: transparent;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        body.radiation #radiation-overlay {
+            opacity: 1;
+            animation: radiation-anim 0.3s infinite;
+        }
+        /* Белая радиация (монохром) */
+        @keyframes radiation-anim {
+            0% { background: rgba(255,255,255,0.05); filter: contrast(1); }
+            25% { background: rgba(255,255,255,0.1); filter: contrast(2) brightness(0.8); }
+            50% { background: rgba(255,255,255,0.05); filter: contrast(1.5); }
+            75% { background: rgba(255,255,255,0.02); filter: contrast(1.2); }
+            100% { background: rgba(255,255,255,0.05); filter: contrast(1); }
+        }
+
+        @media (hover: hover) {
+            .glitch-hover:hover {
+                animation: glitch-text 0.4s steps(2, end);
+            }
+            @keyframes glitch-text {
+                0% { text-shadow: 2px 0 var(--accent), -2px 0 var(--highlight); }
+                20% { text-shadow: -3px 0 var(--accent), 3px 0 var(--highlight); clip-path: inset(10% 0 20% 0); }
+                40% { text-shadow: 2px 0 var(--highlight), -2px 0 var(--accent); clip-path: inset(50% 0 10% 0); }
+                60% { text-shadow: -2px 0 var(--accent), 2px 0 var(--highlight); clip-path: inset(80% 0 5% 0); }
+                80% { text-shadow: 2px 0 var(--highlight), -2px 0 var(--accent); clip-path: inset(30% 0 60% 0); }
+                100% { text-shadow: none; clip-path: none; }
+            }
+        }
+
+        /* ===== МЕДИА-ЗАПРОС ДЛЯ МОБИЛЬНЫХ ===== */
         @media (max-width: 768px) {
             .window {
                 min-width: 0;
@@ -399,7 +561,7 @@
                 height: auto;
             }
 
-            #main-window, #armory-window, #bio-window {
+            #main-window, #armory-window, #bio-window, #radio-window {
                 left: 5px !important;
                 top: 5px !important;
                 width: calc(100% - 10px) !important;
@@ -462,12 +624,17 @@
                 height: 90px;
                 margin-right: 15px;
             }
+
+            #theme-toggle,
+            #event-log {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ИНТРО С ЧЕРЕДОВАНИЕМ -->
+    <!-- ИНТРО -->
     <div id="intro-overlay" onclick="startTerminal()">
         <div id="biohazard-wrapper">
             <div class="glow"></div>
@@ -484,15 +651,15 @@
         <!-- ОКНО 1: ГЛАВНОЕ -->
         <div class="window" id="main-window">
             <div class="window-header">
-                <span class="window-title">TheQjii :: Терминал</span>
+                <span class="window-title glitch-hover">TheQjii :: Терминал</span>
                 <div class="window-controls">
                     <div class="btn" onclick="minimizeWindow('main-window')">-</div>
                     <div class="btn" onclick="closeWindow('main-window')">X</div>
                 </div>
             </div>
             <div class="window-body">
-                <h1>ВЫЖИВШИЙ: TheQjii</h1>
-                <div class="status-line" id="typing-status">
+                <h1 class="glitch-hover">ВЫЖИВШИЙ: TheQjii</h1>
+                <div class="status-line glitch-hover" id="typing-status">
                     > СТАТУС: ЖИВ (но пустошь красна) <br>
                     > ЛОКАЦИЯ: Сектор V, Кровавые Пустоши
                 </div>
@@ -500,13 +667,14 @@
                 <div class="avatar"><img src="https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png" alt="Фото"></div>
                 
                 <div class="bio" id="typing-bio">Добро пожаловать в мой мир. Тут не осталось ничего, кроме пепла, крови и ржавчины. Я прошел через красный туман радиации и остался жив.</div>
-                <div class="death-quote" id="typing-quote">F*** DEATH! <small>— TheQjii</small></div>
+                <div class="death-quote glitch-hover" id="typing-quote">F*** DEATH! <small>— TheQjii</small></div>
 
                 <div class="command-list">
                     > ДОСТУПНЫЕ КОМАНДЫ:<br>
-                    <code>/Armory</code> <span>- Открыть проекты (Оружейная)</span><br>
-                    <code>/Bio</code> <span>- Соцсети (Связь)</span><br>
-                    <code>/help</code> <span>- Показать этот список</span>
+                    <code id="cmd-armory">/Armory</code> <span>- Открыть проекты (Оружейная)</span><br>
+                    <code id="cmd-bio">/Bio</code> <span>- Соцсети (Связь)</span><br>
+                    <code id="cmd-radio">/Radio</code> <span>- Комментарии (Radio)</span><br>
+                    <code id="cmd-help">/help</code> <span>- Показать этот список</span>
                 </div>
 
                 <div class="cmd-container">
@@ -519,7 +687,7 @@
         <!-- ОКНО 2: АРСЕНАЛ -->
         <div class="window" id="armory-window">
             <div class="window-header">
-                <span class="window-title">TheQjii :: Арсенал</span>
+                <span class="window-title glitch-hover">TheQjii :: Арсенал</span>
                 <div class="window-controls">
                     <div class="btn" onclick="minimizeWindow('armory-window')">-</div>
                     <div class="btn" onclick="closeWindow('armory-window')">X</div>
@@ -533,8 +701,40 @@
                 </div>
                 <div class="status-line" style="text-align: center;">> Проекты TheQjii</div>
                 <div class="project-grid">
-                    <div class="project-item"><img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+1"><p>Работа 1</p></div>
-                    <div class="project-item"><img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+2"><p>Работа 2</p></div>
+                    <div class="project-item">
+                        <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+1">
+                        <p>Работа 1</p>
+                        <button class="like-btn" data-project="1" onclick="toggleLike(this)">❤ 0</button>
+                        <!-- Комментарии к проекту -->
+                        <div class="comments-section" data-project="1">
+                            <h4>Комментарии</h4>
+                            <div class="comment-list" id="comments-1"></div>
+                            <div class="nickname-row">
+                                <input type="text" class="nickname-input" id="nickname-1" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
+                            </div>
+                            <div class="comment-input-row">
+                                <input type="text" class="comment-input" id="comment-input-1" placeholder="Ваш комментарий..." />
+                                <button class="comment-btn" onclick="addProjectComment(1)">Добавить</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-item">
+                        <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+2">
+                        <p>Работа 2</p>
+                        <button class="like-btn" data-project="2" onclick="toggleLike(this)">❤ 0</button>
+                        <!-- Комментарии к проекту -->
+                        <div class="comments-section" data-project="2">
+                            <h4>Комментарии</h4>
+                            <div class="comment-list" id="comments-2"></div>
+                            <div class="nickname-row">
+                                <input type="text" class="nickname-input" id="nickname-2" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
+                            </div>
+                            <div class="comment-input-row">
+                                <input type="text" class="comment-input" id="comment-input-2" placeholder="Ваш комментарий..." />
+                                <button class="comment-btn" onclick="addProjectComment(2)">Добавить</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="cmd-container">
                     > Введите: <input type="text" id="armory-cmd" class="terminal-input" placeholder="/back" autocomplete="off" />
@@ -546,7 +746,7 @@
         <!-- ОКНО 3: БИО -->
         <div class="window" id="bio-window">
             <div class="window-header">
-                <span class="window-title">TheQjii :: Био</span>
+                <span class="window-title glitch-hover">TheQjii :: Био</span>
                 <div class="window-controls">
                     <div class="btn" onclick="minimizeWindow('bio-window')">-</div>
                     <div class="btn" onclick="closeWindow('bio-window')">X</div>
@@ -569,7 +769,55 @@
                 </div>
             </div>
         </div>
+
+        <!-- ОКНО 4: RADIO (КОММЕНТАРИИ) -->
+        <div class="window" id="radio-window">
+            <div class="window-header">
+                <span class="window-title glitch-hover">TheQjii :: Radio</span>
+                <div class="window-controls">
+                    <div class="btn" onclick="minimizeWindow('radio-window')">-</div>
+                    <div class="btn" onclick="closeWindow('radio-window')">X</div>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="lock-overlay">
+                    <div class="lock-icon">
+                        <img src="https://img.icons8.com/ios-filled/100/ff0000/lock--v1.png" alt="Замок">
+                    </div>
+                </div>
+                <div class="status-line">> Комментарии (Radio)</div>
+                <div class="comment-list" id="radio-comment-list"></div>
+                <div class="nickname-row">
+                    <input type="text" class="nickname-input" id="radio-nickname" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
+                </div>
+                <div class="comment-input-row">
+                    <input type="text" class="comment-input" id="radio-comment-input" placeholder="Ваш комментарий..." />
+                    <button class="comment-btn" onclick="addRadioComment()">Добавить</button>
+                </div>
+                <div class="cmd-container">
+                    > Введите: <input type="text" id="radio-cmd" class="terminal-input" placeholder="/back" autocomplete="off" />
+                    <span>_</span>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Кнопка смены темы (только ПК) -->
+    <button id="theme-toggle" onclick="toggleTheme()">🔄 ТЕМА</button>
+
+    <!-- Лог событий (только ПК) -->
+    <div id="event-log">
+        <div class="log-header">> LOG::</div>
+    </div>
+
+    <!-- Прогресс-бар загрузки (все устройства) -->
+    <div id="loading-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+        <div class="loading-text" id="loading-text">LOADING SYSTEM...</div>
+    </div>
+
+    <!-- Эффект радиации (только ПК) -->
+    <div id="radiation-overlay"></div>
 
     <!-- ===== ВСТРОЕННЫЙ ПЛЕЕР ===== -->
     <div id="custom-player">
@@ -578,9 +826,7 @@
             <div class="player-close" onclick="hidePlayer()">X</div>
         </div>
         
-        <!-- Аудио элемент -->
         <audio id="audio-element" controls preload="metadata">
-            <!-- ВАША ССЫЛКА НА ТРЕК -->
             <source src="https://raw.githubusercontent.com/theqjii/theQjii.github.io/b61680c99c05ea60914826521e3de90363f27ca3/song.mp3" type="audio/mpeg">
             Ваш браузер не поддерживает аудио.
         </audio>
@@ -604,7 +850,7 @@
     </div>
 
 <script>
-    // ⬇️ ВАШИ НОВЫЕ 3 КАРТИНКИ ДЛЯ ИНТРО (прямые ссылки) ⬇️
+    // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
     const introImages = [
         "https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png", 
         "https://cdn.phototourl.com/free/2026-09-03-d17f16ab-5032-4e82-a7c3-3129b29fd5fa.png", 
@@ -613,7 +859,10 @@
     
     let currentImgIndex = 0;
     let introInterval;
+    let logInterval;
+    let radiationInterval;
 
+    // ===== ИНТРО =====
     function startIntroAnimation() {
         const wrapper = document.getElementById('biohazard-wrapper');
         const img = document.getElementById('biohazard-img');
@@ -661,14 +910,99 @@
             mainWin.classList.add('open-animation');
             bringToFront(mainWin);
 
+            // Показываем прогресс-бар загрузки
+            showProgressBar();
+
             setTimeout(() => {
                 typeWriter('typing-status', 15);
                 setTimeout(() => typeWriter('typing-bio', 25), 150);
                 setTimeout(() => typeWriter('typing-quote', 30), 400);
+                
+                // Запускаем лог и радиацию только на ПК
+                if (window.innerWidth > 768) {
+                    initLog();
+                    startRadiationEffect();
+                }
             }, 500);
         }, 700);
     }
 
+    // ===== ПРОГРЕСС-БАР =====
+    function showProgressBar() {
+        const bar = document.getElementById('loading-bar');
+        const fill = document.getElementById('progress-fill');
+        const text = document.getElementById('loading-text');
+        bar.style.display = 'flex';
+        fill.style.width = '0%';
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15 + 5;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                setTimeout(() => {
+                    bar.style.display = 'none';
+                }, 500);
+            }
+            fill.style.width = progress + '%';
+            text.textContent = 'LOADING... ' + Math.floor(progress) + '%';
+        }, 100);
+    }
+
+    // ===== ЛОГ СОБЫТИЙ (ПК) =====
+    const logMessages = [
+        "> Радиация повышается...",
+        "> Обнаружен неизвестный сигнал.",
+        "> Система охлаждения перегрета.",
+        "> Где-то рядом шаги...",
+        "> Ветер приносит запах крови.",
+        "> Осталось 98% кислорода.",
+        "> Мутанты активны в секторе 7.",
+        "> Терминал не отвечает 3 секунды...",
+        "> Кто-то пытается взломать защиту.",
+        "> Аномалия в гравитации.",
+        "> Совет: проверяйте запасы.",
+        "> Внимание: биологическая угроза."
+    ];
+
+    function addLogMessage(message) {
+        const log = document.getElementById('event-log');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.textContent = message;
+        log.appendChild(entry);
+        while (log.children.length > 10) {
+            log.removeChild(log.lastChild);
+        }
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function initLog() {
+        addLogMessage("> Система запущена. Лог активирован.");
+        logInterval = setInterval(() => {
+            const msg = logMessages[Math.floor(Math.random() * logMessages.length)];
+            addLogMessage(msg);
+        }, 5000);
+    }
+
+    // ===== РАДИАЦИЯ (ПК) =====
+    function startRadiationEffect() {
+        radiationInterval = setInterval(() => {
+            if (Math.random() < 0.15) {
+                document.body.classList.add('radiation');
+                setTimeout(() => {
+                    document.body.classList.remove('radiation');
+                }, 1000);
+            }
+        }, 1000);
+    }
+
+    // ===== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ =====
+    function toggleTheme() {
+        document.body.classList.toggle('theme-green');
+    }
+
+    // ===== ОКНА =====
     let zIndexCounter = 10;
     const windows = document.querySelectorAll('.window');
 
@@ -677,7 +1011,6 @@
         element.style.zIndex = zIndexCounter;
     }
 
-    // Перетаскивание окон: отключено на мобильных
     windows.forEach(win => {
         if (window.innerWidth > 768) {
             const header = win.querySelector('.window-header');
@@ -710,7 +1043,6 @@
         win.classList.add('open-animation');
         bringToFront(win);
 
-        // Адаптация под мобильные: растягиваем окно на весь экран
         if (window.innerWidth <= 768) {
             win.style.left = '5px';
             win.style.top = '5px';
@@ -719,10 +1051,12 @@
         }
 
         const lock = win.querySelector('.lock-overlay');
-        lock.style.display = 'flex';
-        setTimeout(() => {
-            lock.style.display = 'none';
-        }, 1200);
+        if (lock) {
+            lock.style.display = 'flex';
+            setTimeout(() => {
+                lock.style.display = 'none';
+            }, 1200);
+        }
     }
 
     function minimizeWindow(id) {
@@ -747,14 +1081,50 @@
         }, 600);
     }
 
+    // ===== ОБРАБОТКА КОМАНД =====
+    function highlightCommand(cmd) {
+        document.querySelectorAll('.command-list code').forEach(code => {
+            code.classList.remove('active-command');
+        });
+        const map = {
+            '/armory': 'cmd-armory',
+            '/bio': 'cmd-bio',
+            '/radio': 'cmd-radio',
+            '/help': 'cmd-help'
+        };
+        const id = map[cmd];
+        if (id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('active-command');
+            setTimeout(() => {
+                el.classList.remove('active-command');
+            }, 2000);
+        }
+    }
+
     document.getElementById('home-cmd').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             let val = this.value.trim().toLowerCase();
-            if (val === '/armory') openWindow('armory-window');
-            else if (val === '/bio') openWindow('bio-window');
-            else if (val === '/help') this.value = 'Доступно: /armory, /bio';
-            else this.value = 'Ошибка!';
+            if (val === '/armory') {
+                openWindow('armory-window');
+                highlightCommand('/armory');
+            }
+            else if (val === '/bio') {
+                openWindow('bio-window');
+                highlightCommand('/bio');
+            }
+            else if (val === '/radio') {
+                openWindow('radio-window');
+                highlightCommand('/radio');
+            }
+            else if (val === '/help') {
+                this.value = 'Доступно: /armory, /bio, /radio';
+                highlightCommand('/help');
+            }
+            else {
+                this.value = 'Ошибка!';
+            }
             setTimeout(() => { this.value = ''; }, 1000);
         }
     });
@@ -775,6 +1145,14 @@
         }
     });
 
+    document.getElementById('radio-cmd').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (this.value.trim().toLowerCase() === '/back') closeWindow('radio-window');
+            else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
+        }
+    });
+
     // ===== ЛОГИКА ПЛЕЕРА =====
     const audio = document.getElementById('audio-element');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -782,46 +1160,39 @@
     const volumeSlider = document.querySelector('.volume-slider');
     const timeDisplay = document.getElementById('time-display');
 
-    // Функция для воспроизведения/паузы
     function togglePlay() {
         if (audio.paused) {
             audio.play();
-            playPauseBtn.textContent = '⏸'; // Символ паузы
+            playPauseBtn.textContent = '⏸';
         } else {
             audio.pause();
-            playPauseBtn.textContent = '▶'; // Символ воспроизведения
+            playPauseBtn.textContent = '▶';
         }
     }
 
-    // Изменение громкости
     function setVolume(value) {
         audio.volume = value;
     }
 
-    // Перемотка на конкретное время
     function seekTo(percent) {
         if (audio.duration > 0) {
             audio.currentTime = (percent / 100) * audio.duration;
         }
     }
 
-    // Перемотка назад на 5 секунд
     function seekBackward() {
         audio.currentTime = Math.max(0, audio.currentTime - 5);
     }
 
-    // Перемотка вперед на 5 секунд
     function seekForward() {
         audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
     }
 
-    // Скрыть плеер
     function hidePlayer() {
         document.getElementById('custom-player').style.display = 'none';
         audio.pause();
     }
 
-    // Обновление прогресс-бара и времени при воспроизведении
     audio.addEventListener('timeupdate', function() {
         if (audio.duration > 0) {
             progressBar.value = (audio.currentTime / audio.duration) * 100;
@@ -837,12 +1208,149 @@
         }
     });
 
-    // Сброс кнопки, если трек закончился
     audio.addEventListener('ended', function() {
         playPauseBtn.textContent = '▶';
     });
 
-    window.onload = startIntroAnimation;
+    // ===== СИСТЕМА ЛАЙКОВ =====
+    function loadLikes() {
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            const projectId = btn.dataset.project;
+            const likes = localStorage.getItem('likes_' + projectId) || 0;
+            const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+            btn.innerHTML = `❤ ${likes}`;
+            if (isLiked) btn.classList.add('liked');
+        });
+    }
+
+    function toggleLike(btn) {
+        const projectId = btn.dataset.project;
+        const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+        if (isLiked) {
+            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
+            likes = Math.max(0, likes - 1);
+            localStorage.setItem('likes_' + projectId, likes);
+            localStorage.setItem('liked_' + projectId, 'false');
+            btn.innerHTML = `❤ ${likes}`;
+            btn.classList.remove('liked');
+        } else {
+            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
+            likes++;
+            localStorage.setItem('likes_' + projectId, likes);
+            localStorage.setItem('liked_' + projectId, 'true');
+            btn.innerHTML = `❤ ${likes}`;
+            btn.classList.add('liked');
+        }
+    }
+
+    // ===== ФУНКЦИИ ДЛЯ НИКНЕЙМА =====
+    function saveNickname(value) {
+        localStorage.setItem('user_nickname', value);
+        document.querySelectorAll('.nickname-input').forEach(input => {
+            input.value = value;
+        });
+    }
+
+    function loadNickname() {
+        const nickname = localStorage.getItem('user_nickname') || '';
+        document.querySelectorAll('.nickname-input').forEach(input => {
+            input.value = nickname;
+        });
+    }
+
+    // ===== КОММЕНТАРИИ В ПРОЕКТАХ =====
+    function loadProjectComments() {
+        document.querySelectorAll('.comments-section').forEach(section => {
+            const projectId = section.dataset.project;
+            const list = document.getElementById('comments-' + projectId);
+            if (list) {
+                const comments = JSON.parse(localStorage.getItem('comments_' + projectId) || '[]');
+                list.innerHTML = '';
+                if (comments.length === 0) {
+                    list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
+                } else {
+                    comments.forEach(comment => {
+                        const div = document.createElement('div');
+                        div.className = 'comment-item';
+                        const name = comment.name || 'Аноним';
+                        div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
+                        list.appendChild(div);
+                    });
+                }
+            }
+        });
+    }
+
+    function addProjectComment(projectId) {
+        const nicknameInput = document.getElementById('nickname-' + projectId);
+        const commentInput = document.getElementById('comment-input-' + projectId);
+        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
+        const text = commentInput.value.trim();
+        if (!text) return;
+
+        saveNickname(name);
+
+        const comments = JSON.parse(localStorage.getItem('comments_' + projectId) || '[]');
+        comments.push({ name: name, text: text });
+        localStorage.setItem('comments_' + projectId, JSON.stringify(comments));
+        loadProjectComments();
+        commentInput.value = '';
+    }
+
+    // ===== КОММЕНТАРИИ В RADIO =====
+    function loadRadioComments() {
+        const list = document.getElementById('radio-comment-list');
+        const comments = JSON.parse(localStorage.getItem('radio_comments') || '[]');
+        list.innerHTML = '';
+        if (comments.length === 0) {
+            list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
+        } else {
+            comments.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
+                const name = comment.name || 'Аноним';
+                div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
+                list.appendChild(div);
+            });
+        }
+    }
+
+    function addRadioComment() {
+        const nicknameInput = document.getElementById('radio-nickname');
+        const commentInput = document.getElementById('radio-comment-input');
+        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
+        const text = commentInput.value.trim();
+        if (!text) return;
+
+        saveNickname(name);
+
+        const comments = JSON.parse(localStorage.getItem('radio_comments') || '[]');
+        comments.push({ name: name, text: text });
+        localStorage.setItem('radio_comments', JSON.stringify(comments));
+        loadRadioComments();
+        commentInput.value = '';
+    }
+
+    // ===== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ESCAPE HTML =====
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
+    window.onload = function() {
+        startIntroAnimation();
+        loadLikes();
+        loadProjectComments();
+        loadRadioComments();
+        loadNickname();
+        if (window.innerWidth > 768) {
+            setTimeout(() => {
+                addLogMessage("> Система загружена. Ожидание команды...");
+            }, 1500);
+        }
+    };
 </script>
 </body>
 </html>
