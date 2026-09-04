@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-dark: #050000;
@@ -308,7 +312,7 @@
             font-size: 1.2rem;
         }
         .comment-list {
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
             margin-bottom: 10px;
             padding: 5px;
@@ -527,7 +531,6 @@
             opacity: 1;
             animation: radiation-anim 0.3s infinite;
         }
-        /* Белая радиация (монохром) */
         @keyframes radiation-anim {
             0% { background: rgba(255,255,255,0.05); filter: contrast(1); }
             25% { background: rgba(255,255,255,0.1); filter: contrast(2) brightness(0.8); }
@@ -630,6 +633,110 @@
                 display: none;
             }
         }
+
+        /* Пагинация */
+        .load-more-btn {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text-bright);
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .load-more-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        /* Стили плеера (с кнопкой закрытия) */
+        #custom-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(20, 0, 0, 0.95);
+            border: 3px solid var(--border);
+            box-shadow: 0 0 20px var(--border), inset 0 0 30px rgba(0,0,0,0.8);
+            z-index: 10000;
+            padding: 15px;
+            font-family: 'VT323', monospace;
+            color: var(--text-bright);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+        }
+        .player-title {
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--border);
+            font-size: 1.5rem;
+        }
+        .player-close {
+            background: var(--border);
+            border: 1px solid #000;
+            color: #fff;
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            line-height: 23px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .player-close:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        audio {
+            width: 100%;
+            height: 35px;
+            background: transparent;
+            color: var(--text-bright);
+            outline: none;
+            border: 1px solid var(--border);
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-control {
+            background: var(--bg-header);
+            border: 2px solid var(--border);
+            color: var(--text-bright);
+            width: 50px;
+            height: 35px;
+            text-align: center;
+            line-height: 31px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-control:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+        .volume-slider, .progress-bar {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .time-display {
+            font-size: 1rem;
+            text-align: center;
+            color: var(--text-dim);
+        }
     </style>
 </head>
 <body>
@@ -709,6 +816,7 @@
                         <div class="comments-section" data-project="1">
                             <h4>Комментарии</h4>
                             <div class="comment-list" id="comments-1"></div>
+                            <button class="load-more-btn" id="more-1" onclick="loadMoreComments(1)">Показать ещё</button>
                             <div class="nickname-row">
                                 <input type="text" class="nickname-input" id="nickname-1" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
                             </div>
@@ -726,6 +834,7 @@
                         <div class="comments-section" data-project="2">
                             <h4>Комментарии</h4>
                             <div class="comment-list" id="comments-2"></div>
+                            <button class="load-more-btn" id="more-2" onclick="loadMoreComments(2)">Показать ещё</button>
                             <div class="nickname-row">
                                 <input type="text" class="nickname-input" id="nickname-2" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
                             </div>
@@ -786,12 +895,13 @@
                     </div>
                 </div>
                 <div class="status-line">> Комментарии (Radio)</div>
-                <div class="comment-list" id="radio-comment-list"></div>
+                <div class="comment-list" id="comments-radio"></div>
+                <button class="load-more-btn" id="more-radio" onclick="loadMoreComments('radio')">Показать ещё</button>
                 <div class="nickname-row">
-                    <input type="text" class="nickname-input" id="radio-nickname" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
+                    <input type="text" class="nickname-input" id="nickname-radio" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
                 </div>
                 <div class="comment-input-row">
-                    <input type="text" class="comment-input" id="radio-comment-input" placeholder="Ваш комментарий..." />
+                    <input type="text" class="comment-input" id="comment-input-radio" placeholder="Ваш комментарий..." />
                     <button class="comment-btn" onclick="addRadioComment()">Добавить</button>
                 </div>
                 <div class="cmd-container">
@@ -850,6 +960,24 @@
     </div>
 
 <script>
+    // ===== FIREBASE CONFIG (ВАШИ ДАННЫЕ) =====
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbxu0fY70u8hyGza1ebqgJV6nAboS9TeM",
+        authDomain: "radio-3b5bf.firebaseapp.com",
+        databaseURL: "https://radio-3b5bf-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "radio-3b5bf",
+        storageBucket: "radio-3b5bf.firebasestorage.app",
+        messagingSenderId: "192354186709",
+        appId: "1:192354186709:web:c5c0d6183090dfee08395c",
+        measurementId: "G-VMSWW1NT62"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Анонимный вход
+    firebase.auth().signInAnonymously().catch(err => console.error("Auth error:", err));
+
     // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
     const introImages = [
         "https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png", 
@@ -1188,6 +1316,7 @@
         audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
     }
 
+    // Кнопка закрытия плеера
     function hidePlayer() {
         document.getElementById('custom-player').style.display = 'none';
         audio.pause();
@@ -1212,38 +1341,98 @@
         playPauseBtn.textContent = '▶';
     });
 
-    // ===== СИСТЕМА ЛАЙКОВ =====
+    // ===== ЛАЙКИ (FIREBASE) =====
     function loadLikes() {
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            const projectId = btn.dataset.project;
-            const likes = localStorage.getItem('likes_' + projectId) || 0;
-            const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-            btn.innerHTML = `❤ ${likes}`;
-            if (isLiked) btn.classList.add('liked');
+        db.ref('likes').on('value', snapshot => {
+            const likesData = snapshot.val() || {};
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                const projectId = btn.dataset.project;
+                const likes = likesData[projectId] || 0;
+                const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+                btn.innerHTML = `❤ ${likes}`;
+                btn.classList.toggle('liked', isLiked);
+            });
         });
     }
 
     function toggleLike(btn) {
         const projectId = btn.dataset.project;
         const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-        if (isLiked) {
-            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
-            likes = Math.max(0, likes - 1);
-            localStorage.setItem('likes_' + projectId, likes);
-            localStorage.setItem('liked_' + projectId, 'false');
-            btn.innerHTML = `❤ ${likes}`;
-            btn.classList.remove('liked');
-        } else {
-            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
-            likes++;
-            localStorage.setItem('likes_' + projectId, likes);
-            localStorage.setItem('liked_' + projectId, 'true');
-            btn.innerHTML = `❤ ${likes}`;
-            btn.classList.add('liked');
+        const likesRef = db.ref('likes/' + projectId);
+        likesRef.transaction(current => {
+            if (isLiked) {
+                localStorage.setItem('liked_' + projectId, 'false');
+                return (current || 1) - 1;
+            } else {
+                localStorage.setItem('liked_' + projectId, 'true');
+                return (current || 0) + 1;
+            }
+        });
+    }
+
+    // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (FIREBASE) =====
+    let commentsState = {};
+
+    function loadComments(projectId) {
+        db.ref('comments/' + projectId).on('value', snapshot => {
+            let all = snapshot.val() || [];
+            if (!Array.isArray(all)) all = Object.values(all);
+            commentsState[projectId] = {
+                all: all,
+                visible: 5
+            };
+            renderComments(projectId);
+        });
+    }
+
+    function renderComments(projectId) {
+        const state = commentsState[projectId];
+        if (!state) return;
+        const list = document.getElementById('comments-' + projectId);
+        list.innerHTML = '';
+        if (state.all.length === 0) {
+            list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
+            return;
+        }
+        const start = Math.max(0, state.all.length - state.visible);
+        const toShow = state.all.slice(start);
+        toShow.forEach(comment => {
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            const name = comment.name || 'Аноним';
+            div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
+            list.appendChild(div);
+        });
+        const moreBtn = document.getElementById('more-' + projectId);
+        if (moreBtn) {
+            moreBtn.style.display = state.all.length > state.visible ? 'block' : 'none';
         }
     }
 
-    // ===== ФУНКЦИИ ДЛЯ НИКНЕЙМА =====
+    function loadMoreComments(projectId) {
+        if (!commentsState[projectId]) return;
+        commentsState[projectId].visible += 5;
+        renderComments(projectId);
+    }
+
+    // Добавление комментария (проекты)
+    function addProjectComment(projectId) {
+        const nicknameInput = document.getElementById('nickname-' + projectId);
+        const commentInput = document.getElementById('comment-input-' + projectId);
+        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
+        const text = commentInput.value.trim();
+        if (!text) return;
+        saveNickname(name);
+        db.ref('comments/' + projectId).push({ name, text, timestamp: Date.now() });
+        commentInput.value = '';
+    }
+
+    // Радио
+    function addRadioComment() {
+        addProjectComment('radio');
+    }
+
+    // Никнейм (локально)
     function saveNickname(value) {
         localStorage.setItem('user_nickname', value);
         document.querySelectorAll('.nickname-input').forEach(input => {
@@ -1258,93 +1447,25 @@
         });
     }
 
-    // ===== КОММЕНТАРИИ В ПРОЕКТАХ =====
-    function loadProjectComments() {
-        document.querySelectorAll('.comments-section').forEach(section => {
-            const projectId = section.dataset.project;
-            const list = document.getElementById('comments-' + projectId);
-            if (list) {
-                const comments = JSON.parse(localStorage.getItem('comments_' + projectId) || '[]');
-                list.innerHTML = '';
-                if (comments.length === 0) {
-                    list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
-                } else {
-                    comments.forEach(comment => {
-                        const div = document.createElement('div');
-                        div.className = 'comment-item';
-                        const name = comment.name || 'Аноним';
-                        div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
-                        list.appendChild(div);
-                    });
-                }
-            }
-        });
-    }
-
-    function addProjectComment(projectId) {
-        const nicknameInput = document.getElementById('nickname-' + projectId);
-        const commentInput = document.getElementById('comment-input-' + projectId);
-        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
-        const text = commentInput.value.trim();
-        if (!text) return;
-
-        saveNickname(name);
-
-        const comments = JSON.parse(localStorage.getItem('comments_' + projectId) || '[]');
-        comments.push({ name: name, text: text });
-        localStorage.setItem('comments_' + projectId, JSON.stringify(comments));
-        loadProjectComments();
-        commentInput.value = '';
-    }
-
-    // ===== КОММЕНТАРИИ В RADIO =====
-    function loadRadioComments() {
-        const list = document.getElementById('radio-comment-list');
-        const comments = JSON.parse(localStorage.getItem('radio_comments') || '[]');
-        list.innerHTML = '';
-        if (comments.length === 0) {
-            list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
-        } else {
-            comments.forEach(comment => {
-                const div = document.createElement('div');
-                div.className = 'comment-item';
-                const name = comment.name || 'Аноним';
-                div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
-                list.appendChild(div);
-            });
-        }
-    }
-
-    function addRadioComment() {
-        const nicknameInput = document.getElementById('radio-nickname');
-        const commentInput = document.getElementById('radio-comment-input');
-        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
-        const text = commentInput.value.trim();
-        if (!text) return;
-
-        saveNickname(name);
-
-        const comments = JSON.parse(localStorage.getItem('radio_comments') || '[]');
-        comments.push({ name: name, text: text });
-        localStorage.setItem('radio_comments', JSON.stringify(comments));
-        loadRadioComments();
-        commentInput.value = '';
-    }
-
-    // ===== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ESCAPE HTML =====
+    // Escape HTML
     function escapeHtml(str) {
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     window.onload = function() {
         startIntroAnimation();
         loadLikes();
-        loadProjectComments();
-        loadRadioComments();
         loadNickname();
+        // Загружаем комментарии для всех секций
+        document.querySelectorAll('.comments-section').forEach(section => {
+            const pid = section.dataset.project;
+            loadComments(pid);
+        });
+        // Радио
+        loadComments('radio');
         if (window.innerWidth > 768) {
             setTimeout(() => {
                 addLogMessage("> Система загружена. Ожидание команды...");
