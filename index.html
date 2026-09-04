@@ -6,6 +6,7 @@
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
     <style>
+        /* ... (все стили из исходного кода, включая добавленные стили плеера) ... */
         body {
             margin: 0; padding: 0;
             background: #050000;
@@ -97,7 +98,6 @@
             position: relative;
             z-index: 2;
             mix-blend-mode: multiply;
-            /* Добавляем красное свечение в финальное состояние анимации */
             animation: fade-from-dark 2s ease-in-out forwards;
         }
 
@@ -284,6 +284,110 @@
             60% { transform: scale(0.9) rotate(-5deg); }
             100% { transform: scale(0.2) rotate(180deg); opacity: 0; }
         }
+
+        /* ===== НОВЫЕ СТИЛИ ДЛЯ ПЛЕЕРА ===== */
+        #custom-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(20, 0, 0, 0.95);
+            border: 3px solid #8b0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(0,0,0,0.8);
+            z-index: 10000;
+            padding: 15px;
+            font-family: 'VT323', monospace;
+            color: #ff8080;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #custom-player .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #8b0000;
+            padding-bottom: 5px;
+        }
+
+        #custom-player .player-title {
+            color: #ff0000;
+            text-shadow: 0 0 5px #990000;
+            font-size: 1.5rem;
+            cursor: default;
+        }
+
+        #custom-player .player-close {
+            background: #8b0000;
+            border: 1px solid #000;
+            color: #fff;
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            line-height: 23px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        #custom-player .player-close:hover {
+            background: #ff0000;
+            color: #000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        #custom-player audio {
+            width: 100%;
+            height: 35px;
+            background: transparent;
+            color: #ff8080;
+            outline: none;
+            border: 1px solid #8b0000;
+        }
+
+        #custom-player .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #custom-player .btn-control {
+            background: #2a0000;
+            border: 2px solid #8b0000;
+            color: #ff8080;
+            width: 50px;
+            height: 35px;
+            text-align: center;
+            line-height: 31px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        #custom-player .btn-control:hover {
+            background: #ff0000;
+            color: #000;
+            border-color: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        #custom-player .volume-slider {
+            width: 100%;
+            accent-color: #ff0000;
+            cursor: pointer;
+        }
+
+        #custom-player .progress-bar {
+            width: 100%;
+            accent-color: #ff0000;
+            cursor: pointer;
+        }
+
+        #custom-player .time-display {
+            font-size: 1rem;
+            text-align: center;
+            color: #a83232;
+        }
     </style>
 </head>
 <body>
@@ -291,7 +395,7 @@
     <!-- ИНТРО С ЧЕРЕДОВАНИЕМ -->
     <div id="intro-overlay" onclick="startTerminal()">
         <div id="biohazard-wrapper">
-            <div class="glow"></div> <!-- Добавлен слой тусклого красного свечения -->
+            <div class="glow"></div>
             <img id="biohazard-img" src="https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png" alt="Splash Image">
         </div>
     </div>
@@ -354,7 +458,6 @@
                 </div>
                 <div class="status-line" style="text-align: center;">> Проекты TheQjii</div>
                 <div class="project-grid">
-                    <!-- ⬇️ ЗАМЕНИТЕ ЭТИ ДВЕ ССЫЛКИ НА ВАШИ ФОТО ⬇️ -->
                     <div class="project-item"><img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+1"><p>Работа 1</p></div>
                     <div class="project-item"><img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+2"><p>Работа 2</p></div>
                 </div>
@@ -390,6 +493,38 @@
                     <span>_</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== ВСТРОЕННЫЙ ПЛЕЕР ===== -->
+    <div id="custom-player">
+        <div class="player-header">
+            <span class="player-title">> AUDIO::</span>
+            <div class="player-close" onclick="hidePlayer()">X</div>
+        </div>
+        
+        <!-- Аудио элемент -->
+        <audio id="audio-element" controls preload="metadata">
+            <!-- ВАША ССЫЛКА НА ТРЕК -->
+            <source src="https://raw.githubusercontent.com/theqjii/theQjii.github.io/b61680c99c05ea60914826521e3de90363f27ca3/song.mp3" type="audio/mpeg">
+            Ваш браузер не поддерживает аудио.
+        </audio>
+        
+        <div class="time-display" id="time-display">00:00 / 00:00</div>
+        
+        <div class="controls">
+            <div class="btn-control" onclick="togglePlay()" id="play-pause-btn">▶</div>
+            <div class="btn-control" onclick="seekBackward()">-5s</div>
+            <div class="btn-control" onclick="seekForward()">+5s</div>
+        </div>
+        
+        <div class="volume-container">
+            <label>Громкость:</label>
+            <input type="range" min="0" max="1" step="0.1" value="1" class="volume-slider" oninput="setVolume(this.value)">
+        </div>
+        
+        <div class="progress-container">
+            <input type="range" min="0" max="100" value="0" class="progress-bar" oninput="seekTo(this.value)">
         </div>
     </div>
 
@@ -552,6 +687,73 @@
             if (this.value.trim().toLowerCase() === '/back') closeWindow('bio-window');
             else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
         }
+    });
+
+    // ===== ЛОГИКА ПЛЕЕРА =====
+    const audio = document.getElementById('audio-element');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const progressBar = document.querySelector('.progress-bar');
+    const volumeSlider = document.querySelector('.volume-slider');
+    const timeDisplay = document.getElementById('time-display');
+
+    // Функция для воспроизведения/паузы
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play();
+            playPauseBtn.textContent = '⏸'; // Символ паузы
+        } else {
+            audio.pause();
+            playPauseBtn.textContent = '▶'; // Символ воспроизведения
+        }
+    }
+
+    // Изменение громкости
+    function setVolume(value) {
+        audio.volume = value;
+    }
+
+    // Перемотка на конкретное время
+    function seekTo(percent) {
+        if (audio.duration > 0) {
+            audio.currentTime = (percent / 100) * audio.duration;
+        }
+    }
+
+    // Перемотка назад на 5 секунд
+    function seekBackward() {
+        audio.currentTime = Math.max(0, audio.currentTime - 5);
+    }
+
+    // Перемотка вперед на 5 секунд
+    function seekForward() {
+        audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+    }
+
+    // Скрыть плеер
+    function hidePlayer() {
+        document.getElementById('custom-player').style.display = 'none';
+        audio.pause();
+    }
+
+    // Обновление прогресс-бара и времени при воспроизведении
+    audio.addEventListener('timeupdate', function() {
+        if (audio.duration > 0) {
+            progressBar.value = (audio.currentTime / audio.duration) * 100;
+            let currentMinutes = Math.floor(audio.currentTime / 60);
+            let currentSeconds = Math.floor(audio.currentTime % 60);
+            let durationMinutes = Math.floor(audio.duration / 60);
+            let durationSeconds = Math.floor(audio.duration % 60);
+            
+            if (currentSeconds < 10) currentSeconds = '0' + currentSeconds;
+            if (durationSeconds < 10) durationSeconds = '0' + durationSeconds;
+            
+            timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
+        }
+    });
+
+    // Сброс кнопки, если трек закончился
+    audio.addEventListener('ended', function() {
+        playPauseBtn.textContent = '▶';
     });
 
     window.onload = startIntroAnimation;
