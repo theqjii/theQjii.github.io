@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -652,7 +651,7 @@
             border-color: var(--accent);
         }
 
-        /* Стили плеера (с кнопкой закрытия) */
+        /* Плеер */
         #custom-player {
             position: fixed;
             bottom: 20px;
@@ -879,7 +878,7 @@
             </div>
         </div>
 
-        <!-- ОКНО 4: RADIO (КОММЕНТАРИИ) -->
+        <!-- ОКНО 4: RADIO -->
         <div class="window" id="radio-window">
             <div class="window-header">
                 <span class="window-title glitch-hover">TheQjii :: Radio</span>
@@ -920,7 +919,7 @@
         <div class="log-header">> LOG::</div>
     </div>
 
-    <!-- Прогресс-бар загрузки (все устройства) -->
+    <!-- Прогресс-бар загрузки -->
     <div id="loading-bar">
         <div class="progress-fill" id="progress-fill"></div>
         <div class="loading-text" id="loading-text">LOADING SYSTEM...</div>
@@ -929,549 +928,544 @@
     <!-- Эффект радиации (только ПК) -->
     <div id="radiation-overlay"></div>
 
-    <!-- ===== ВСТРОЕННЫЙ ПЛЕЕР ===== -->
+    <!-- Плеер -->
     <div id="custom-player">
         <div class="player-header">
             <span class="player-title">> AUDIO::</span>
             <div class="player-close" onclick="hidePlayer()">X</div>
         </div>
-        
         <audio id="audio-element" controls preload="metadata">
             <source src="https://raw.githubusercontent.com/theqjii/theQjii.github.io/b61680c99c05ea60914826521e3de90363f27ca3/song.mp3" type="audio/mpeg">
             Ваш браузер не поддерживает аудио.
         </audio>
-        
         <div class="time-display" id="time-display">00:00 / 00:00</div>
-        
         <div class="controls">
             <div class="btn-control" onclick="togglePlay()" id="play-pause-btn">▶</div>
             <div class="btn-control" onclick="seekBackward()">-5s</div>
             <div class="btn-control" onclick="seekForward()">+5s</div>
         </div>
-        
         <div class="volume-container">
             <label>Громкость:</label>
             <input type="range" min="0" max="1" step="0.1" value="1" class="volume-slider" oninput="setVolume(this.value)">
         </div>
-        
         <div class="progress-container">
             <input type="range" min="0" max="100" value="0" class="progress-bar" oninput="seekTo(this.value)">
         </div>
     </div>
 
-<script>
-    // ===== FIREBASE CONFIG (ВАШИ ДАННЫЕ) =====
-    const firebaseConfig = {
-        apiKey: "AIzaSyAbxu0fY70u8hyGza1ebqgJV6nAboS9TeM",
-        authDomain: "radio-3b5bf.firebaseapp.com",
-        databaseURL: "https://radio-3b5bf-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "radio-3b5bf",
-        storageBucket: "radio-3b5bf.firebasestorage.app",
-        messagingSenderId: "192354186709",
-        appId: "1:192354186709:web:c5c0d6183090dfee08395c",
-        measurementId: "G-VMSWW1NT62"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Анонимный вход
-    firebase.auth().signInAnonymously().catch(err => console.error("Auth error:", err));
-
-    // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
-    const introImages = [
-        "https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png", 
-        "https://cdn.phototourl.com/free/2026-09-03-d17f16ab-5032-4e82-a7c3-3129b29fd5fa.png", 
-        "https://cdn.phototourl.com/free/2026-09-03-a2762fa3-0bfe-4bec-a831-6a3cdb62ad03.png"
-    ];
-    
-    let currentImgIndex = 0;
-    let introInterval;
-    let logInterval;
-    let radiationInterval;
-
-    // ===== ИНТРО =====
-    function startIntroAnimation() {
-        const wrapper = document.getElementById('biohazard-wrapper');
-        const img = document.getElementById('biohazard-img');
-        
-        wrapper.style.setProperty('--current-img', `url(${introImages[0]})`);
-        img.src = introImages[0];
-
-        introInterval = setInterval(() => {
-            currentImgIndex = (currentImgIndex + 1) % introImages.length;
-            const nextImg = introImages[currentImgIndex];
-            
-            wrapper.style.setProperty('--current-img', `url(${nextImg})`);
-            img.src = nextImg;
-        }, 180);
-    }
-
-    function typeWriter(elementId, speed) {
-        const element = document.getElementById(elementId);
-        const text = element.innerHTML;
-        element.innerHTML = "";
-        element.classList.add('type-cursor');
-        
-        let i = 0;
-        function type() {
-            if (i < text.length) {
-                element.innerHTML += text.charAt(i);
-                i++;
-                setTimeout(type, speed);
-            } else {
-                element.classList.remove('type-cursor');
-            }
-        }
-        type();
-    }
-
-    function startTerminal() {
-        clearInterval(introInterval);
-        const intro = document.getElementById('intro-overlay');
-        intro.classList.add('hidden');
-        
-        setTimeout(() => {
-            intro.style.display = 'none';
-            const mainWin = document.getElementById('main-window');
-            mainWin.style.display = 'flex';
-            mainWin.classList.add('open-animation');
-            bringToFront(mainWin);
-
-            // Показываем прогресс-бар загрузки
-            showProgressBar();
-
-            setTimeout(() => {
-                typeWriter('typing-status', 15);
-                setTimeout(() => typeWriter('typing-bio', 25), 150);
-                setTimeout(() => typeWriter('typing-quote', 30), 400);
-                
-                // Запускаем лог и радиацию только на ПК
-                if (window.innerWidth > 768) {
-                    initLog();
-                    startRadiationEffect();
-                }
-            }, 500);
-        }, 700);
-    }
-
-    // ===== ПРОГРЕСС-БАР =====
-    function showProgressBar() {
-        const bar = document.getElementById('loading-bar');
-        const fill = document.getElementById('progress-fill');
-        const text = document.getElementById('loading-text');
-        bar.style.display = 'flex';
-        fill.style.width = '0%';
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 15 + 5;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(interval);
-                setTimeout(() => {
-                    bar.style.display = 'none';
-                }, 500);
-            }
-            fill.style.width = progress + '%';
-            text.textContent = 'LOADING... ' + Math.floor(progress) + '%';
-        }, 100);
-    }
-
-    // ===== ЛОГ СОБЫТИЙ (ПК) =====
-    const logMessages = [
-        "> Радиация повышается...",
-        "> Обнаружен неизвестный сигнал.",
-        "> Система охлаждения перегрета.",
-        "> Где-то рядом шаги...",
-        "> Ветер приносит запах крови.",
-        "> Осталось 98% кислорода.",
-        "> Мутанты активны в секторе 7.",
-        "> Терминал не отвечает 3 секунды...",
-        "> Кто-то пытается взломать защиту.",
-        "> Аномалия в гравитации.",
-        "> Совет: проверяйте запасы.",
-        "> Внимание: биологическая угроза."
-    ];
-
-    function addLogMessage(message) {
-        const log = document.getElementById('event-log');
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.textContent = message;
-        log.appendChild(entry);
-        while (log.children.length > 10) {
-            log.removeChild(log.lastChild);
-        }
-        log.scrollTop = log.scrollHeight;
-    }
-
-    function initLog() {
-        addLogMessage("> Система запущена. Лог активирован.");
-        logInterval = setInterval(() => {
-            const msg = logMessages[Math.floor(Math.random() * logMessages.length)];
-            addLogMessage(msg);
-        }, 5000);
-    }
-
-    // ===== РАДИАЦИЯ (ПК) =====
-    function startRadiationEffect() {
-        radiationInterval = setInterval(() => {
-            if (Math.random() < 0.15) {
-                document.body.classList.add('radiation');
-                setTimeout(() => {
-                    document.body.classList.remove('radiation');
-                }, 1000);
-            }
-        }, 1000);
-    }
-
-    // ===== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ =====
-    function toggleTheme() {
-        document.body.classList.toggle('theme-green');
-    }
-
-    // ===== ОКНА =====
-    let zIndexCounter = 10;
-    const windows = document.querySelectorAll('.window');
-
-    function bringToFront(element) {
-        zIndexCounter++;
-        element.style.zIndex = zIndexCounter;
-    }
-
-    windows.forEach(win => {
-        if (window.innerWidth > 768) {
-            const header = win.querySelector('.window-header');
-            header.addEventListener('mousedown', (e) => {
-                bringToFront(win);
-                let shiftX = e.clientX - win.getBoundingClientRect().left;
-                let shiftY = e.clientY - win.getBoundingClientRect().top;
-
-                function moveAt(e) {
-                    win.style.left = e.clientX - shiftX + 'px';
-                    win.style.top = e.clientY - shiftY + 'px';
-                }
-
-                function onMouseMove(e) { moveAt(e); }
-
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', () => {
-                    document.removeEventListener('mousemove', onMouseMove);
-                }, { once: true });
-            });
-        }
-    });
-
-    function openWindow(id) {
-        const win = document.getElementById(id);
-        win.style.display = 'flex';
-        win.classList.remove('minimized', 'closing');
-        win.classList.remove('open-animation');
-        void win.offsetWidth;
-        win.classList.add('open-animation');
-        bringToFront(win);
-
-        if (window.innerWidth <= 768) {
-            win.style.left = '5px';
-            win.style.top = '5px';
-            win.style.width = 'calc(100% - 10px)';
-            win.style.height = '90vh';
-        }
-
-        const lock = win.querySelector('.lock-overlay');
-        if (lock) {
-            lock.style.display = 'flex';
-            setTimeout(() => {
-                lock.style.display = 'none';
-            }, 1200);
-        }
-    }
-
-    function minimizeWindow(id) {
-        const win = document.getElementById(id);
-        if (win.classList.contains('minimized')) {
-            win.classList.remove('minimized', 'crumpling');
-        } else {
-            win.classList.add('crumpling');
-            setTimeout(() => {
-                win.classList.remove('crumpling');
-                win.classList.add('minimized');
-            }, 400);
-        }
-    }
-
-    function closeWindow(id) {
-        const win = document.getElementById(id);
-        win.classList.add('closing');
-        setTimeout(() => {
-            win.style.display = 'none';
-            win.classList.remove('closing');
-        }, 600);
-    }
-
-    // ===== ОБРАБОТКА КОМАНД =====
-    function highlightCommand(cmd) {
-        document.querySelectorAll('.command-list code').forEach(code => {
-            code.classList.remove('active-command');
-        });
-        const map = {
-            '/armory': 'cmd-armory',
-            '/bio': 'cmd-bio',
-            '/radio': 'cmd-radio',
-            '/help': 'cmd-help'
+    <script>
+        // ===== FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbxu0fY70u8hyGza1ebqgJV6nAboS9TeM",
+            authDomain: "radio-3b5bf.firebaseapp.com",
+            databaseURL: "https://radio-3b5bf-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "radio-3b5bf",
+            storageBucket: "radio-3b5bf.firebasestorage.app",
+            messagingSenderId: "192354186709",
+            appId: "1:192354186709:web:c5c0d6183090dfee08395c",
+            measurementId: "G-VMSWW1NT62"
         };
-        const id = map[cmd];
-        if (id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.add('active-command');
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
+        const introImages = [
+            "https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png", 
+            "https://cdn.phototourl.com/free/2026-09-03-d17f16ab-5032-4e82-a7c3-3129b29fd5fa.png", 
+            "https://cdn.phototourl.com/free/2026-09-03-a2762fa3-0bfe-4bec-a831-6a3cdb62ad03.png"
+        ];
+        
+        let currentImgIndex = 0;
+        let introInterval;
+        let logInterval;
+        let radiationInterval;
+
+        // ===== ИНТРО =====
+        function startIntroAnimation() {
+            const wrapper = document.getElementById('biohazard-wrapper');
+            const img = document.getElementById('biohazard-img');
+            
+            wrapper.style.setProperty('--current-img', `url(${introImages[0]})`);
+            img.src = introImages[0];
+
+            introInterval = setInterval(() => {
+                currentImgIndex = (currentImgIndex + 1) % introImages.length;
+                const nextImg = introImages[currentImgIndex];
+                
+                wrapper.style.setProperty('--current-img', `url(${nextImg})`);
+                img.src = nextImg;
+            }, 180);
+        }
+
+        function typeWriter(elementId, speed) {
+            const element = document.getElementById(elementId);
+            const text = element.innerHTML;
+            element.innerHTML = "";
+            element.classList.add('type-cursor');
+            
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    element.classList.remove('type-cursor');
+                }
+            }
+            type();
+        }
+
+        function startTerminal() {
+            clearInterval(introInterval);
+            const intro = document.getElementById('intro-overlay');
+            intro.classList.add('hidden');
+            
             setTimeout(() => {
-                el.classList.remove('active-command');
-            }, 2000);
-        }
-    }
+                intro.style.display = 'none';
+                const mainWin = document.getElementById('main-window');
+                mainWin.style.display = 'flex';
+                mainWin.classList.add('open-animation');
+                bringToFront(mainWin);
 
-    document.getElementById('home-cmd').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            let val = this.value.trim().toLowerCase();
-            if (val === '/armory') {
-                openWindow('armory-window');
-                highlightCommand('/armory');
+                // Показываем прогресс-бар загрузки
+                showProgressBar();
+
+                setTimeout(() => {
+                    typeWriter('typing-status', 15);
+                    setTimeout(() => typeWriter('typing-bio', 25), 150);
+                    setTimeout(() => typeWriter('typing-quote', 30), 400);
+                    
+                    if (window.innerWidth > 768) {
+                        initLog();
+                        startRadiationEffect();
+                    }
+                }, 500);
+            }, 700);
+        }
+
+        // ===== ПРОГРЕСС-БАР =====
+        function showProgressBar() {
+            const bar = document.getElementById('loading-bar');
+            const fill = document.getElementById('progress-fill');
+            const text = document.getElementById('loading-text');
+            bar.style.display = 'flex';
+            fill.style.width = '0%';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15 + 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        bar.style.display = 'none';
+                    }, 500);
+                }
+                fill.style.width = progress + '%';
+                text.textContent = 'LOADING... ' + Math.floor(progress) + '%';
+            }, 100);
+        }
+
+        // ===== ЛОГ СОБЫТИЙ (ПК) =====
+        const logMessages = [
+            "> Радиация повышается...",
+            "> Обнаружен неизвестный сигнал.",
+            "> Система охлаждения перегрета.",
+            "> Где-то рядом шаги...",
+            "> Ветер приносит запах крови.",
+            "> Осталось 98% кислорода.",
+            "> Мутанты активны в секторе 7.",
+            "> Терминал не отвечает 3 секунды...",
+            "> Кто-то пытается взломать защиту.",
+            "> Аномалия в гравитации.",
+            "> Совет: проверяйте запасы.",
+            "> Внимание: биологическая угроза."
+        ];
+
+        function addLogMessage(message) {
+            const log = document.getElementById('event-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            log.appendChild(entry);
+            while (log.children.length > 10) {
+                log.removeChild(log.lastChild);
             }
-            else if (val === '/bio') {
-                openWindow('bio-window');
-                highlightCommand('/bio');
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function initLog() {
+            addLogMessage("> Система запущена. Лог активирован.");
+            logInterval = setInterval(() => {
+                const msg = logMessages[Math.floor(Math.random() * logMessages.length)];
+                addLogMessage(msg);
+            }, 5000);
+        }
+
+        // ===== РАДИАЦИЯ (ПК) =====
+        function startRadiationEffect() {
+            radiationInterval = setInterval(() => {
+                if (Math.random() < 0.15) {
+                    document.body.classList.add('radiation');
+                    setTimeout(() => {
+                        document.body.classList.remove('radiation');
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        // ===== ПЕРЕКЛЮЧЕНИЕ ТЕМЫ =====
+        function toggleTheme() {
+            document.body.classList.toggle('theme-green');
+        }
+
+        // ===== ОКНА =====
+        let zIndexCounter = 10;
+        const windows = document.querySelectorAll('.window');
+
+        function bringToFront(element) {
+            zIndexCounter++;
+            element.style.zIndex = zIndexCounter;
+        }
+
+        windows.forEach(win => {
+            if (window.innerWidth > 768) {
+                const header = win.querySelector('.window-header');
+                header.addEventListener('mousedown', (e) => {
+                    bringToFront(win);
+                    let shiftX = e.clientX - win.getBoundingClientRect().left;
+                    let shiftY = e.clientY - win.getBoundingClientRect().top;
+
+                    function moveAt(e) {
+                        win.style.left = e.clientX - shiftX + 'px';
+                        win.style.top = e.clientY - shiftY + 'px';
+                    }
+
+                    function onMouseMove(e) { moveAt(e); }
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                    }, { once: true });
+                });
             }
-            else if (val === '/radio') {
-                openWindow('radio-window');
-                highlightCommand('/radio');
-            }
-            else if (val === '/help') {
-                this.value = 'Доступно: /armory, /bio, /radio';
-                highlightCommand('/help');
-            }
-            else {
-                this.value = 'Ошибка!';
-            }
-            setTimeout(() => { this.value = ''; }, 1000);
-        }
-    });
-
-    document.getElementById('armory-cmd').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (this.value.trim().toLowerCase() === '/back') closeWindow('armory-window');
-            else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
-        }
-    });
-
-    document.getElementById('bio-cmd').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (this.value.trim().toLowerCase() === '/back') closeWindow('bio-window');
-            else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
-        }
-    });
-
-    document.getElementById('radio-cmd').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (this.value.trim().toLowerCase() === '/back') closeWindow('radio-window');
-            else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
-        }
-    });
-
-    // ===== ЛОГИКА ПЛЕЕРА =====
-    const audio = document.getElementById('audio-element');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const progressBar = document.querySelector('.progress-bar');
-    const volumeSlider = document.querySelector('.volume-slider');
-    const timeDisplay = document.getElementById('time-display');
-
-    function togglePlay() {
-        if (audio.paused) {
-            audio.play();
-            playPauseBtn.textContent = '⏸';
-        } else {
-            audio.pause();
-            playPauseBtn.textContent = '▶';
-        }
-    }
-
-    function setVolume(value) {
-        audio.volume = value;
-    }
-
-    function seekTo(percent) {
-        if (audio.duration > 0) {
-            audio.currentTime = (percent / 100) * audio.duration;
-        }
-    }
-
-    function seekBackward() {
-        audio.currentTime = Math.max(0, audio.currentTime - 5);
-    }
-
-    function seekForward() {
-        audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
-    }
-
-    // Кнопка закрытия плеера
-    function hidePlayer() {
-        document.getElementById('custom-player').style.display = 'none';
-        audio.pause();
-    }
-
-    audio.addEventListener('timeupdate', function() {
-        if (audio.duration > 0) {
-            progressBar.value = (audio.currentTime / audio.duration) * 100;
-            let currentMinutes = Math.floor(audio.currentTime / 60);
-            let currentSeconds = Math.floor(audio.currentTime % 60);
-            let durationMinutes = Math.floor(audio.duration / 60);
-            let durationSeconds = Math.floor(audio.duration % 60);
-            
-            if (currentSeconds < 10) currentSeconds = '0' + currentSeconds;
-            if (durationSeconds < 10) durationSeconds = '0' + durationSeconds;
-            
-            timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
-        }
-    });
-
-    audio.addEventListener('ended', function() {
-        playPauseBtn.textContent = '▶';
-    });
-
-    // ===== ЛАЙКИ (FIREBASE) =====
-    function loadLikes() {
-        db.ref('likes').on('value', snapshot => {
-            const likesData = snapshot.val() || {};
-            document.querySelectorAll('.like-btn').forEach(btn => {
-                const projectId = btn.dataset.project;
-                const likes = likesData[projectId] || 0;
-                const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-                btn.innerHTML = `❤ ${likes}`;
-                btn.classList.toggle('liked', isLiked);
-            });
         });
-    }
 
-    function toggleLike(btn) {
-        const projectId = btn.dataset.project;
-        const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-        const likesRef = db.ref('likes/' + projectId);
-        likesRef.transaction(current => {
-            if (isLiked) {
-                localStorage.setItem('liked_' + projectId, 'false');
-                return (current || 1) - 1;
+        function openWindow(id) {
+            const win = document.getElementById(id);
+            win.style.display = 'flex';
+            win.classList.remove('minimized', 'closing');
+            win.classList.remove('open-animation');
+            void win.offsetWidth;
+            win.classList.add('open-animation');
+            bringToFront(win);
+
+            if (window.innerWidth <= 768) {
+                win.style.left = '5px';
+                win.style.top = '5px';
+                win.style.width = 'calc(100% - 10px)';
+                win.style.height = '90vh';
+            }
+
+            const lock = win.querySelector('.lock-overlay');
+            if (lock) {
+                lock.style.display = 'flex';
+                setTimeout(() => {
+                    lock.style.display = 'none';
+                }, 1200);
+            }
+        }
+
+        function minimizeWindow(id) {
+            const win = document.getElementById(id);
+            if (win.classList.contains('minimized')) {
+                win.classList.remove('minimized', 'crumpling');
             } else {
-                localStorage.setItem('liked_' + projectId, 'true');
-                return (current || 0) + 1;
+                win.classList.add('crumpling');
+                setTimeout(() => {
+                    win.classList.remove('crumpling');
+                    win.classList.add('minimized');
+                }, 400);
+            }
+        }
+
+        function closeWindow(id) {
+            const win = document.getElementById(id);
+            win.classList.add('closing');
+            setTimeout(() => {
+                win.style.display = 'none';
+                win.classList.remove('closing');
+            }, 600);
+        }
+
+        // ===== ОБРАБОТКА КОМАНД =====
+        function highlightCommand(cmd) {
+            document.querySelectorAll('.command-list code').forEach(code => {
+                code.classList.remove('active-command');
+            });
+            const map = {
+                '/armory': 'cmd-armory',
+                '/bio': 'cmd-bio',
+                '/radio': 'cmd-radio',
+                '/help': 'cmd-help'
+            };
+            const id = map[cmd];
+            if (id) {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('active-command');
+                setTimeout(() => {
+                    el.classList.remove('active-command');
+                }, 2000);
+            }
+        }
+
+        document.getElementById('home-cmd').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                let val = this.value.trim().toLowerCase();
+                if (val === '/armory') {
+                    openWindow('armory-window');
+                    highlightCommand('/armory');
+                }
+                else if (val === '/bio') {
+                    openWindow('bio-window');
+                    highlightCommand('/bio');
+                }
+                else if (val === '/radio') {
+                    openWindow('radio-window');
+                    highlightCommand('/radio');
+                }
+                else if (val === '/help') {
+                    this.value = 'Доступно: /armory, /bio, /radio';
+                    highlightCommand('/help');
+                }
+                else {
+                    this.value = 'Ошибка!';
+                }
+                setTimeout(() => { this.value = ''; }, 1000);
             }
         });
-    }
 
-    // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (FIREBASE) =====
-    let commentsState = {};
+        document.getElementById('armory-cmd').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.value.trim().toLowerCase() === '/back') closeWindow('armory-window');
+                else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
+            }
+        });
 
-    function loadComments(projectId) {
-        db.ref('comments/' + projectId).on('value', snapshot => {
-            let all = snapshot.val() || [];
-            if (!Array.isArray(all)) all = Object.values(all);
-            commentsState[projectId] = {
-                all: all,
-                visible: 5
-            };
+        document.getElementById('bio-cmd').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.value.trim().toLowerCase() === '/back') closeWindow('bio-window');
+                else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
+            }
+        });
+
+        document.getElementById('radio-cmd').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.value.trim().toLowerCase() === '/back') closeWindow('radio-window');
+                else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
+            }
+        });
+
+        // ===== ЛОГИКА ПЛЕЕРА =====
+        const audio = document.getElementById('audio-element');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const progressBar = document.querySelector('.progress-bar');
+        const volumeSlider = document.querySelector('.volume-slider');
+        const timeDisplay = document.getElementById('time-display');
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                playPauseBtn.textContent = '⏸';
+            } else {
+                audio.pause();
+                playPauseBtn.textContent = '▶';
+            }
+        }
+
+        function setVolume(value) {
+            audio.volume = value;
+        }
+
+        function seekTo(percent) {
+            if (audio.duration > 0) {
+                audio.currentTime = (percent / 100) * audio.duration;
+            }
+        }
+
+        function seekBackward() {
+            audio.currentTime = Math.max(0, audio.currentTime - 5);
+        }
+
+        function seekForward() {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+        }
+
+        function hidePlayer() {
+            document.getElementById('custom-player').style.display = 'none';
+            audio.pause();
+        }
+
+        audio.addEventListener('timeupdate', function() {
+            if (audio.duration > 0) {
+                progressBar.value = (audio.currentTime / audio.duration) * 100;
+                let currentMinutes = Math.floor(audio.currentTime / 60);
+                let currentSeconds = Math.floor(audio.currentTime % 60);
+                let durationMinutes = Math.floor(audio.duration / 60);
+                let durationSeconds = Math.floor(audio.duration % 60);
+                
+                if (currentSeconds < 10) currentSeconds = '0' + currentSeconds;
+                if (durationSeconds < 10) durationSeconds = '0' + durationSeconds;
+                
+                timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
+            }
+        });
+
+        audio.addEventListener('ended', function() {
+            playPauseBtn.textContent = '▶';
+        });
+
+        // ===== ЛАЙКИ (FIREBASE) =====
+        function loadLikes() {
+            db.ref('likes').on('value', snapshot => {
+                const likesData = snapshot.val() || {};
+                document.querySelectorAll('.like-btn').forEach(btn => {
+                    const projectId = btn.dataset.project;
+                    const likes = likesData[projectId] || 0;
+                    const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+                    btn.innerHTML = `❤ ${likes}`;
+                    btn.classList.toggle('liked', isLiked);
+                });
+            });
+        }
+
+        function toggleLike(btn) {
+            const projectId = btn.dataset.project;
+            const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+            const likesRef = db.ref('likes/' + projectId);
+            likesRef.transaction(current => {
+                if (isLiked) {
+                    localStorage.setItem('liked_' + projectId, 'false');
+                    return (current || 1) - 1;
+                } else {
+                    localStorage.setItem('liked_' + projectId, 'true');
+                    return (current || 0) + 1;
+                }
+            });
+        }
+
+        // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (FIREBASE) =====
+        let commentsState = {};
+
+        function loadComments(projectId) {
+            db.ref('comments/' + projectId).on('value', snapshot => {
+                let all = snapshot.val() || [];
+                if (!Array.isArray(all)) all = Object.values(all);
+                console.log(`Комментарии для ${projectId}:`, all); // для отладки
+                commentsState[projectId] = {
+                    all: all,
+                    visible: 5
+                };
+                renderComments(projectId);
+            }, error => {
+                console.error(`Ошибка чтения комментариев для ${projectId}:`, error);
+            });
+        }
+
+        function renderComments(projectId) {
+            const state = commentsState[projectId];
+            if (!state) return;
+            const list = document.getElementById('comments-' + projectId);
+            list.innerHTML = '';
+            if (state.all.length === 0) {
+                list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
+                return;
+            }
+            const start = Math.max(0, state.all.length - state.visible);
+            const toShow = state.all.slice(start);
+            toShow.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
+                const name = comment.name || 'Аноним';
+                div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
+                list.appendChild(div);
+            });
+            const moreBtn = document.getElementById('more-' + projectId);
+            if (moreBtn) {
+                moreBtn.style.display = state.all.length > state.visible ? 'block' : 'none';
+            }
+        }
+
+        function loadMoreComments(projectId) {
+            if (!commentsState[projectId]) return;
+            commentsState[projectId].visible += 5;
             renderComments(projectId);
-        });
-    }
-
-    function renderComments(projectId) {
-        const state = commentsState[projectId];
-        if (!state) return;
-        const list = document.getElementById('comments-' + projectId);
-        list.innerHTML = '';
-        if (state.all.length === 0) {
-            list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
-            return;
         }
-        const start = Math.max(0, state.all.length - state.visible);
-        const toShow = state.all.slice(start);
-        toShow.forEach(comment => {
+
+        function addProjectComment(projectId) {
+            const nicknameInput = document.getElementById('nickname-' + projectId);
+            const commentInput = document.getElementById('comment-input-' + projectId);
+            const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
+            const text = commentInput.value.trim();
+            if (!text) return;
+            saveNickname(name);
+            db.ref('comments/' + projectId).push({ name, text, timestamp: Date.now() });
+            commentInput.value = '';
+        }
+
+        function addRadioComment() {
+            addProjectComment('radio');
+        }
+
+        function saveNickname(value) {
+            localStorage.setItem('user_nickname', value);
+            document.querySelectorAll('.nickname-input').forEach(input => {
+                input.value = value;
+            });
+        }
+
+        function loadNickname() {
+            const nickname = localStorage.getItem('user_nickname') || '';
+            document.querySelectorAll('.nickname-input').forEach(input => {
+                input.value = nickname;
+            });
+        }
+
+        function escapeHtml(str) {
             const div = document.createElement('div');
-            div.className = 'comment-item';
-            const name = comment.name || 'Аноним';
-            div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
-            list.appendChild(div);
-        });
-        const moreBtn = document.getElementById('more-' + projectId);
-        if (moreBtn) {
-            moreBtn.style.display = state.all.length > state.visible ? 'block' : 'none';
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
         }
-    }
 
-    function loadMoreComments(projectId) {
-        if (!commentsState[projectId]) return;
-        commentsState[projectId].visible += 5;
-        renderComments(projectId);
-    }
-
-    // Добавление комментария (проекты)
-    function addProjectComment(projectId) {
-        const nicknameInput = document.getElementById('nickname-' + projectId);
-        const commentInput = document.getElementById('comment-input-' + projectId);
-        const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
-        const text = commentInput.value.trim();
-        if (!text) return;
-        saveNickname(name);
-        db.ref('comments/' + projectId).push({ name, text, timestamp: Date.now() });
-        commentInput.value = '';
-    }
-
-    // Радио
-    function addRadioComment() {
-        addProjectComment('radio');
-    }
-
-    // Никнейм (локально)
-    function saveNickname(value) {
-        localStorage.setItem('user_nickname', value);
-        document.querySelectorAll('.nickname-input').forEach(input => {
-            input.value = value;
-        });
-    }
-
-    function loadNickname() {
-        const nickname = localStorage.getItem('user_nickname') || '';
-        document.querySelectorAll('.nickname-input').forEach(input => {
-            input.value = nickname;
-        });
-    }
-
-    // Escape HTML
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
-    }
-
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    window.onload = function() {
-        startIntroAnimation();
-        loadLikes();
-        loadNickname();
-        // Загружаем комментарии для всех секций
-        document.querySelectorAll('.comments-section').forEach(section => {
-            const pid = section.dataset.project;
-            loadComments(pid);
-        });
-        // Радио
-        loadComments('radio');
-        if (window.innerWidth > 768) {
-            setTimeout(() => {
-                addLogMessage("> Система загружена. Ожидание команды...");
-            }, 1500);
-        }
-    };
-</script>
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        window.onload = function() {
+            startIntroAnimation();
+            // Ждём авторизацию перед загрузкой данных
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    console.log("Анонимный вход успешен:", user.uid);
+                    loadLikes();
+                    loadNickname();
+                    document.querySelectorAll('.comments-section').forEach(section => {
+                        const pid = section.dataset.project;
+                        loadComments(pid);
+                    });
+                    loadComments('radio');
+                    if (window.innerWidth > 768) {
+                        setTimeout(() => {
+                            addLogMessage("> Система загружена. Ожидание команды...");
+                        }, 1500);
+                    }
+                } else {
+                    console.error("Анонимный вход не выполнен");
+                }
+            });
+        };
+    </script>
 </body>
 </html>
