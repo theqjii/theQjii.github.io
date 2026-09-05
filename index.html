@@ -1381,6 +1381,74 @@
         }
     });
 
+    // ===== СИСТЕМА ОБЩИХ КОММЕНТАРИЕВ (SUPABASE) =====
+    // ВСТАВЬ СЮДА ДАННЫЕ ИЗ Supabase:
+    // Project URL: Settings -> API
+    // Publishable key (или legacy anon key): Settings -> API
+    const SUPABASE_URL = 'https://qyazbwormvycgnjudccy.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yA5p6wHcepgcOLLx1D2amA_VT06SSN0';
+
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const COMMENT_COOLDOWN_MS = 15000;
+    let lastCommentTime = 0;
+
+    function escapeCommentText(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatCommentDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'неизвестная дата';
+        return date.toLocaleString('ru-RU');
+    }
+
+    async function loadComments() {
+        const list = document.getElementById('comments-list');
+
+        list.innerHTML = '<div class="comments-empty">> ПОДКЛЮЧЕНИЕ К АРХИВУ...</div>';
+
+        const { data, error } = await supabaseClient
+            .from('comments')
+            .select('id, name, text, created_at')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) {
+            console.error('Supabase load error:', error);
+            list.innerHTML = `
+                <div class="comments-empty">
+                    > ОШИБКА ДОСТУПА К АРХИВУ.<br>
+                    > Проверьте SUPABASE_URL, ключ и SQL-настройки.
+                </div>`;
+            return;
+        }
+
+        if (!data || !data.length) {
+            list.innerHTML = '<div class="comments-empty">> Пока сообщений нет. Станьте первым.</div>';
+            return;
+        }
+
+        list.innerHTML = data.map((comment) => `
+            <div class="comment-item">
+                <div class="comment-meta">
+                    <span class="comment-author">&gt; ${escapeCommentText(comment.name)}</span>
+                    <span class="comment-date">${escapeCommentText(formatCommentDate(comment.created_at))}</span>
+                </div>
+                <div class="comment-message">${escapeCommentText(comment.text)}</div>
+            </div>
+        `).join('');
+    }
+
     // ===== АДМИН-АВТОРИЗАЦИЯ =====
     // Отдельный storageKey не мешает анонимной сессии, используемой лайками.
     const adminClient = window.supabase.createClient(
@@ -1516,73 +1584,6 @@
         }
     });
 
-    // ===== СИСТЕМА ОБЩИХ КОММЕНТАРИЕВ (SUPABASE) =====
-    // ВСТАВЬ СЮДА ДАННЫЕ ИЗ Supabase:
-    // Project URL: Settings -> API
-    // Publishable key (или legacy anon key): Settings -> API
-    const SUPABASE_URL = 'https://qyazbwormvycgnjudccy.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yA5p6wHcepgcOLLx1D2amA_VT06SSN0';
-
-    const { createClient } = window.supabase;
-    const supabaseClient = createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-    );
-
-    const COMMENT_COOLDOWN_MS = 15000;
-    let lastCommentTime = 0;
-
-    function escapeCommentText(value) {
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function formatCommentDate(value) {
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return 'неизвестная дата';
-        return date.toLocaleString('ru-RU');
-    }
-
-    async function loadComments() {
-        const list = document.getElementById('comments-list');
-
-        list.innerHTML = '<div class="comments-empty">> ПОДКЛЮЧЕНИЕ К АРХИВУ...</div>';
-
-        const { data, error } = await supabaseClient
-            .from('comments')
-            .select('id, name, text, created_at')
-            .order('created_at', { ascending: false })
-            .limit(100);
-
-        if (error) {
-            console.error('Supabase load error:', error);
-            list.innerHTML = `
-                <div class="comments-empty">
-                    > ОШИБКА ДОСТУПА К АРХИВУ.<br>
-                    > Проверьте SUPABASE_URL, ключ и SQL-настройки.
-                </div>`;
-            return;
-        }
-
-        if (!data || !data.length) {
-            list.innerHTML = '<div class="comments-empty">> Пока сообщений нет. Станьте первым.</div>';
-            return;
-        }
-
-        list.innerHTML = data.map((comment) => `
-            <div class="comment-item">
-                <div class="comment-meta">
-                    <span class="comment-author">&gt; ${escapeCommentText(comment.name)}</span>
-                    <span class="comment-date">${escapeCommentText(formatCommentDate(comment.created_at))}</span>
-                </div>
-                <div class="comment-message">${escapeCommentText(comment.text)}</div>
-            </div>
-        `).join('');
-    }
 
     async function addComment(name, text) {
         const { error } = await supabaseClient
@@ -1647,7 +1648,7 @@
             if (this.value.trim().toLowerCase() === '/back') {
                 closeWindow('comments-window');
             } else if (this.value.trim().toLowerCase() === '/refresh') {
-                loadComments();
+                loadComments().catch(console.error);
                 this.value = '';
             } else {
                 this.value = 'Ошибка';
@@ -1859,7 +1860,8 @@
         startIntroAnimation();
         await ensureAnonymousUser();
         await loadLikes();
-        loadComments();
+        await loadComments();
+        await checkAdminSession();
         // Добавляем первый лог сразу после загрузки
         setTimeout(() => {
             addLogMessage("> Система загружена. Ожидание команды...");
