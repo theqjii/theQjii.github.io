@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-dark: #050000;
@@ -955,20 +953,10 @@
     </div>
 
     <script>
-        // ===== FIREBASE CONFIG =====
-        const firebaseConfig = {
-            apiKey: "AIzaSyAbxu0fY70u8hyGza1ebqgJV6nAboS9TeM",
-            authDomain: "radio-3b5bf.firebaseapp.com",
-            databaseURL: "https://radio-3b5bf-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "radio-3b5bf",
-            storageBucket: "radio-3b5bf.firebasestorage.app",
-            messagingSenderId: "192354186709",
-            appId: "1:192354186709:web:c5c0d6183090dfee08395c",
-            measurementId: "G-VMSWW1NT62"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://raudoebisazxvcqjcj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_OFn5WN8eZ1Kguz78J4l43Q_ON89kMTr';
+        let sb = null; // Используем sb, чтобы избежать конфликта имён
 
         // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
         const introImages = [
@@ -1331,54 +1319,65 @@
             playPauseBtn.textContent = '▶';
         });
 
-        // ===== ЛАЙКИ (FIREBASE) =====
-        function loadLikes() {
-            db.ref('likes').on('value', snapshot => {
-                const likesData = snapshot.val() || {};
-                document.querySelectorAll('.like-btn').forEach(btn => {
-                    const projectId = btn.dataset.project;
-                    const likes = likesData[projectId] || 0;
-                    const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-                    btn.innerHTML = `❤ ${likes}`;
-                    btn.classList.toggle('liked', isLiked);
-                });
+        // ===== ЛАЙКИ (SUPABASE) =====
+        async function loadLikes() {
+            if (!sb) return;
+            const { data, error } = await sb.from('likes').select('project_id, count');
+            if (error) {
+                console.error('Ошибка загрузки лайков:', error);
+                return;
+            }
+            const likesData = {};
+            data.forEach(row => likesData[row.project_id] = row.count);
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                const projectId = btn.dataset.project;
+                const likes = likesData[projectId] || 0;
+                const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
+                btn.innerHTML = `❤ ${likes}`;
+                btn.classList.toggle('liked', isLiked);
             });
         }
 
-        function toggleLike(btn) {
+        async function toggleLike(btn) {
+            if (!sb) return;
             const projectId = btn.dataset.project;
             const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-            const likesRef = db.ref('likes/' + projectId);
-            
-            likesRef.transaction(current => {
-                if (isLiked) {
-                    localStorage.setItem('liked_' + projectId, 'false');
-                    return (current || 1) - 1;
-                } else {
-                    localStorage.setItem('liked_' + projectId, 'true');
-                    return (current || 0) + 1;
-                }
-            }).then(() => {
-                loadLikes();
-            }).catch(err => console.error("Ошибка лайка:", err));
+
+            if (isLiked) {
+                const { error } = await sb.rpc('decrement_like', { proj_id: projectId });
+                if (error) console.error('Ошибка уменьшения лайка:', error);
+                localStorage.setItem('liked_' + projectId, 'false');
+            } else {
+                const { error } = await sb.rpc('increment_like', { proj_id: projectId });
+                if (error) console.error('Ошибка увеличения лайка:', error);
+                localStorage.setItem('liked_' + projectId, 'true');
+            }
+            loadLikes();
         }
 
-        // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (FIREBASE) =====
+        // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (SUPABASE) =====
         let commentsState = {};
 
-        function loadComments(projectId) {
-            db.ref('comments/' + projectId).on('value', snapshot => {
-                let all = snapshot.val() || [];
-                if (!Array.isArray(all)) all = Object.values(all);
-                console.log(`Комментарии для ${projectId}:`, all);
-                commentsState[projectId] = {
-                    all: all,
-                    visible: 5
-                };
-                renderComments(projectId);
-            }, error => {
-                console.error(`Ошибка чтения комментариев для ${projectId}:`, error);
-            });
+        async function loadComments(projectId) {
+            if (!sb) return;
+            const { data, error } = await sb
+                .from('comments')
+                .select('*')
+                .eq('project_id', projectId)
+                .order('created_at', { ascending: false })
+                .limit(100);
+
+            if (error) {
+                console.error('Ошибка загрузки комментариев:', error);
+                return;
+            }
+
+            data.reverse();
+            commentsState[projectId] = {
+                all: data,
+                visible: 5
+            };
+            renderComments(projectId);
         }
 
         function renderComments(projectId) {
@@ -1411,15 +1410,23 @@
             renderComments(projectId);
         }
 
-        function addProjectComment(projectId) {
+        async function addProjectComment(projectId) {
+            if (!sb) return;
             const nicknameInput = document.getElementById('nickname-' + projectId);
             const commentInput = document.getElementById('comment-input-' + projectId);
             const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
             const text = commentInput.value.trim();
             if (!text) return;
             saveNickname(name);
-            db.ref('comments/' + projectId).push({ name, text, timestamp: Date.now() });
+            const { error } = await sb
+                .from('comments')
+                .insert([{ project_id: projectId, name, text }]);
+            if (error) {
+                console.error('Ошибка добавления комментария:', error);
+                return;
+            }
             commentInput.value = '';
+            loadComments(projectId);
         }
 
         function addRadioComment() {
@@ -1428,16 +1435,12 @@
 
         function saveNickname(value) {
             localStorage.setItem('user_nickname', value);
-            document.querySelectorAll('.nickname-input').forEach(input => {
-                input.value = value;
-            });
+            document.querySelectorAll('.nickname-input').forEach(input => { input.value = value; });
         }
 
         function loadNickname() {
             const nickname = localStorage.getItem('user_nickname') || '';
-            document.querySelectorAll('.nickname-input').forEach(input => {
-                input.value = nickname;
-            });
+            document.querySelectorAll('.nickname-input').forEach(input => { input.value = nickname; });
         }
 
         function escapeHtml(str) {
@@ -1449,27 +1452,35 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.onload = function() {
             startIntroAnimation();
-            // Анонимный вход Firebase
-            firebase.auth().signInAnonymously()
-                .then(() => {
-                    console.log("Анонимный вход выполнен");
-                    // Загрузка всех данных
-                    loadLikes();
-                    loadNickname();
-                    document.querySelectorAll('.comments-section').forEach(section => {
-                        const pid = section.dataset.project;
-                        loadComments(pid);
-                    });
-                    loadComments('radio');
-                    if (window.innerWidth > 768) {
-                        setTimeout(() => {
-                            addLogMessage("> Система загружена. Ожидание команды...");
-                        }, 1500);
-                    }
-                })
-                .catch(error => {
-                    console.error("Ошибка анонимного входа:", error);
-                });
+            // Безопасное подключение Supabase + анонимный вход
+            try {
+                if (typeof supabase !== 'undefined') {
+                    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    // Выполняем анонимный вход, чтобы получить доступ к базе
+                    sb.auth.signInAnonymously()
+                        .then(() => {
+                            console.log("Анонимный вход выполнен!");
+                            loadLikes();
+                            loadNickname();
+                            document.querySelectorAll('.comments-section').forEach(section => {
+                                const pid = section.dataset.project;
+                                loadComments(pid);
+                            });
+                            loadComments('radio');
+                        })
+                        .catch(err => {
+                            console.error("Ошибка анонимного входа:", err);
+                        });
+                } else {
+                    console.error("Библиотека Supabase не загрузилась (CDN заблокирован)");
+                }
+            } catch (e) {
+                console.error("Ошибка подключения Supabase:", e);
+            }
+
+            if (window.innerWidth > 768) {
+                setTimeout(() => addLogMessage("> Система загружена. Ожидание команды..."), 1500);
+            }
         };
     </script>
 </body>
