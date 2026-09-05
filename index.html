@@ -715,6 +715,18 @@
             border: 1px dashed var(--border);
         }
 
+        /* ===== АДМИН-ПАНЕЛЬ ===== */
+        #admin-window { left: 28%; top: 15%; width: 620px; }
+        .admin-body { display: flex; flex-direction: column; gap: 15px; }
+        #admin-panel-box { flex-direction: column; gap: 10px; }
+        .admin-delete {
+            margin-top: 8px; background: transparent; border: 1px solid var(--border);
+            color: var(--text-dim); font-family: 'VT323', monospace; cursor: pointer; padding: 4px 9px;
+        }
+        .admin-delete:hover {
+            color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent);
+        }
+
         /* ===== МЕДИА-ЗАПРОС ДЛЯ МОБИЛЬНЫХ ===== */
         @media (max-width: 768px) {
             .window {
@@ -726,7 +738,7 @@
                 height: auto;
             }
 
-            #main-window, #armory-window, #bio-window, #comments-window {
+            #main-window, #armory-window, #bio-window, #comments-window, #admin-window {
                 left: 5px !important;
                 top: 5px !important;
                 width: calc(100% - 10px) !important;
@@ -852,8 +864,7 @@
                     > ДОСТУПНЫЕ КОМАНДЫ:<br>
                     <code id="cmd-armory">/Armory</code> <span>- Открыть проекты (Оружейная)</span><br>
                     <code id="cmd-bio">/Bio</code> <span>- Соцсети (Связь)</span><br>
-                    <code id="cmd-comments">/Comments</code> <span>- Открыть комментарии</span><br>
-                    <code id="cmd-help">/help</code> <span>- Показать этот список</span>
+                    <code id="cmd-comments">/Comments</code> <span>- Открыть комментарии</span><br>                    <code id="cmd-help">/help</code> <span>- Показать этот список</span>
                 </div>
 
                 <div class="cmd-container">
@@ -920,6 +931,44 @@
                 </div>
                 <div class="cmd-container">
                     > Введите: <input type="text" id="bio-cmd" class="terminal-input" placeholder="/back" autocomplete="off" />
+                    <span>_</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ОКНО 5: АДМИН-ПАНЕЛЬ -->
+        <div class="window" id="admin-window">
+            <div class="window-header">
+                <span class="window-title glitch-hover">TheQjii :: ADMIN</span>
+                <div class="window-controls">
+                    <div class="btn" onclick="minimizeWindow('admin-window')">-</div>
+                    <div class="btn" onclick="closeWindow('admin-window')">X</div>
+                </div>
+            </div>
+            <div class="window-body admin-body">
+                <div class="status-line" style="text-align:center;">> ADMIN CONTROL TERMINAL</div>
+
+                <div id="admin-login-box">
+                    <form id="admin-login-form" class="comment-form">
+                        <input type="email" id="admin-email" class="comment-input"
+                               placeholder="ADMIN EMAIL..." autocomplete="username" required>
+                        <input type="password" id="admin-password" class="comment-input"
+                               placeholder="PASSWORD..." autocomplete="current-password" required>
+                        <button type="submit" class="comment-submit">[ ВОЙТИ ]</button>
+                    </form>
+                </div>
+
+                <div id="admin-panel-box" style="display:none;">
+                    <div class="comment-form-footer" style="margin-bottom:10px;">
+                        <span id="admin-status">> ACCESS GRANTED</span>
+                        <button type="button" id="admin-logout" class="comment-delete">[ ВЫЙТИ ]</button>
+                    </div>
+                    <div id="admin-comments-list" class="comments-list"></div>
+                </div>
+
+                <div class="cmd-container">
+                    > Введите: <input type="text" id="admin-cmd" class="terminal-input"
+                                     placeholder="/back" autocomplete="off" />
                     <span>_</span>
                 </div>
             </div>
@@ -1270,6 +1319,7 @@
             '/armory': 'cmd-armory',
             '/bio': 'cmd-bio',
             '/comments': 'cmd-comments',
+            '/admin': 'cmd-admin',
             '/help': 'cmd-help'
         };
         const id = map[cmd];
@@ -1299,6 +1349,11 @@
                 openWindow('comments-window');
                 highlightCommand('/comments');
             }
+            else if (val === '/admin') {
+                openWindow('admin-window');
+                highlightCommand('/admin');
+                checkAdminSession();
+            }
             else if (val === '/help') {
                 this.value = 'Доступно: /armory, /bio, /comments';
                 highlightCommand('/help');
@@ -1323,6 +1378,141 @@
             e.preventDefault();
             if (this.value.trim().toLowerCase() === '/back') closeWindow('bio-window');
             else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
+        }
+    });
+
+    // ===== АДМИН-АВТОРИЗАЦИЯ =====
+    // Отдельный storageKey не мешает анонимной сессии, используемой лайками.
+    const adminClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+            auth: {
+                persistSession: true,
+                storageKey: 'theqjii-admin-auth-v1',
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }
+    );
+
+    let isAdminLoggedIn = false;
+
+    async function checkAdminSession() {
+        const { data } = await adminClient.auth.getSession();
+        isAdminLoggedIn = !!data?.session?.user;
+        updateAdminUI();
+        if (isAdminLoggedIn) await renderAdminComments();
+    }
+
+    function updateAdminUI() {
+        document.getElementById('admin-login-box').style.display = isAdminLoggedIn ? 'none' : 'block';
+        document.getElementById('admin-panel-box').style.display = isAdminLoggedIn ? 'flex' : 'none';
+    }
+
+    async function renderAdminComments() {
+        if (!isAdminLoggedIn) return;
+
+        const list = document.getElementById('admin-comments-list');
+        list.innerHTML = '<div class="comments-empty">> ЗАГРУЗКА...</div>';
+
+        const { data, error } = await adminClient
+            .from('comments')
+            .select('id, name, text, created_at')
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+        if (error) {
+            console.error('Admin comments load error:', error);
+            list.innerHTML = '<div class="comments-empty">> ОШИБКА ДОСТУПА.</div>';
+            return;
+        }
+
+        if (!data?.length) {
+            list.innerHTML = '<div class="comments-empty">> КОММЕНТАРИЕВ НЕТ.</div>';
+            return;
+        }
+
+        list.innerHTML = data.map(comment => `
+            <div class="comment-item">
+                <div class="comment-meta">
+                    <span class="comment-author">&gt; ${escapeCommentText(comment.name)}</span>
+                    <span class="comment-date">${escapeCommentText(formatCommentDate(comment.created_at))}</span>
+                </div>
+                <div class="comment-message">${escapeCommentText(comment.text)}</div>
+                <button type="button" class="admin-delete"
+                        onclick="adminDeleteComment('${comment.id}')">[ УДАЛИТЬ ]</button>
+            </div>
+        `).join('');
+    }
+
+    async function adminDeleteComment(id) {
+        if (!isAdminLoggedIn) return;
+        if (!window.confirm('Удалить этот комментарий?')) return;
+
+        const { error } = await adminClient
+            .from('comments')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Admin delete error:', error);
+            addLogMessage('> ADMIN: удаление запрещено или произошла ошибка.');
+            return;
+        }
+
+        addLogMessage('> ADMIN: комментарий удалён.');
+        await renderAdminComments();
+        await loadComments();
+    }
+
+    document.getElementById('admin-login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('admin-email').value.trim();
+        const password = document.getElementById('admin-password').value;
+        const button = this.querySelector('.comment-submit');
+
+        button.disabled = true;
+        button.textContent = '[ ПРОВЕРКА... ]';
+
+        const { data, error } = await adminClient.auth.signInWithPassword({ email, password });
+
+        if (error || !data?.session?.user) {
+            console.error('Admin login error:', error);
+            addLogMessage('> ADMIN: неверный email или пароль.');
+            button.disabled = false;
+            button.textContent = '[ ВОЙТИ ]';
+            return;
+        }
+
+        isAdminLoggedIn = true;
+        updateAdminUI();
+        document.getElementById('admin-password').value = '';
+        button.disabled = false;
+        button.textContent = '[ ВОЙТИ ]';
+
+        await renderAdminComments();
+        addLogMessage('> ADMIN: доступ разрешён.');
+    });
+
+    document.getElementById('admin-logout').addEventListener('click', async function() {
+        await adminClient.auth.signOut();
+        isAdminLoggedIn = false;
+        updateAdminUI();
+        addLogMessage('> ADMIN: выход выполнен.');
+    });
+
+    document.getElementById('admin-cmd').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (this.value.trim().toLowerCase() === '/back') {
+                closeWindow('admin-window');
+                this.value = '';
+            } else {
+                this.value = 'Ошибка';
+                setTimeout(() => { this.value = ''; }, 1000);
+            }
         }
     });
 
@@ -1526,39 +1716,28 @@
     });
 
     // ===== СИСТЕМА ОБЩИХ ЛАЙКОВ (SUPABASE) =====
-    // Общие лайки + возможность снять свой лайк.
+    // Лайки общие для всех. Снять свой лайк можно благодаря
+    // анонимной сессии Supabase Auth.
     let currentAnonymousUser = null;
-    let anonymousAuthAttempted = false;
 
     async function ensureAnonymousUser() {
-        if (currentAnonymousUser) return currentAnonymousUser;
-        if (anonymousAuthAttempted) return null;
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
 
-        anonymousAuthAttempted = true;
-
-        try {
-            const { data: sessionData } = await supabaseClient.auth.getSession();
-
-            if (sessionData?.session?.user) {
-                currentAnonymousUser = sessionData.session.user;
-                return currentAnonymousUser;
-            }
-
-            const { data, error } = await supabaseClient.auth.signInAnonymously();
-
-            if (error) {
-                console.error('Anonymous auth error:', error);
-                addLogMessage('> AUTH: не удалось создать анонимную сессию. Проверь Anonymous Sign-Ins.');
-                return null;
-            }
-
-            currentAnonymousUser = data?.user || null;
+        if (!sessionError && sessionData?.session?.user) {
+            currentAnonymousUser = sessionData.session.user;
             return currentAnonymousUser;
-        } catch (error) {
-            console.error('Anonymous auth exception:', error);
-            addLogMessage('> AUTH: ошибка подключения.');
+        }
+
+        const { data, error } = await supabaseClient.auth.signInAnonymously();
+
+        if (error) {
+            console.error('Anonymous auth error:', error);
+            addLogMessage('> ОШИБКА AUTH: не удалось создать анонимную сессию.');
             return null;
         }
+
+        currentAnonymousUser = data.user;
+        return currentAnonymousUser;
     }
 
     async function getLikeCount(projectId) {
@@ -1568,7 +1747,7 @@
             .eq('project_id', String(projectId));
 
         if (error) {
-            console.error('Like count error:', error);
+            console.error('Supabase like count error:', error);
             return 0;
         }
 
@@ -1576,28 +1755,33 @@
     }
 
     async function getOwnLike(projectId) {
-        const user = await ensureAnonymousUser();
-        if (!user) return null;
+        if (!currentAnonymousUser) {
+            await ensureAnonymousUser();
+        }
+
+        if (!currentAnonymousUser) return null;
 
         const { data, error } = await supabaseClient
             .from('project_likes')
             .select('id')
             .eq('project_id', String(projectId))
-            .eq('user_id', user.id)
+            .eq('user_id', currentAnonymousUser.id)
             .maybeSingle();
 
         if (error) {
-            console.error('Own like error:', error);
+            console.error('Supabase own like check error:', error);
             return null;
         }
 
-        return data;
+        return data || null;
     }
 
     async function updateLikeButton(btn) {
         const projectId = btn.dataset.project;
-        const count = await getLikeCount(projectId);
-        const ownLike = await getOwnLike(projectId);
+        const [count, ownLike] = await Promise.all([
+            getLikeCount(projectId),
+            getOwnLike(projectId)
+        ]);
 
         const countEl = btn.querySelector('.like-count');
         if (countEl) countEl.textContent = count;
@@ -1610,37 +1794,20 @@
 
     async function loadLikes() {
         const buttons = document.querySelectorAll('.like-btn');
-
-        // Числа работают даже если Auth временно недоступен.
         for (const btn of buttons) {
-            const projectId = btn.dataset.project;
-            const count = await getLikeCount(projectId);
-            const countEl = btn.querySelector('.like-count');
-            if (countEl) countEl.textContent = count;
-        }
-
-        // Определяем состояние именно этого браузера только один раз.
-        await ensureAnonymousUser();
-
-        for (const btn of buttons) {
-            const projectId = btn.dataset.project;
-            const ownLike = await getOwnLike(projectId);
-            const liked = !!ownLike;
-            btn.classList.toggle('liked', liked);
-            btn.title = liked ? 'Снять лайк' : 'Поставить лайк';
-            btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+            await updateLikeButton(btn);
         }
     }
 
     async function toggleLike(btn) {
-        const user = await ensureAnonymousUser();
+        const projectId = btn.dataset.project;
 
-        if (!user) {
-            addLogMessage('> НЕЛЬЗЯ ИЗМЕНИТЬ ЛАЙК: Supabase Auth недоступен.');
-            return;
+        if (!currentAnonymousUser) {
+            await ensureAnonymousUser();
         }
 
-        const projectId = btn.dataset.project;
+        if (!currentAnonymousUser) return;
+
         btn.disabled = true;
 
         try {
@@ -1651,10 +1818,10 @@
                     .from('project_likes')
                     .delete()
                     .eq('id', ownLike.id)
-                    .eq('user_id', user.id);
+                    .eq('user_id', currentAnonymousUser.id);
 
                 if (error) {
-                    console.error('Unlike error:', error);
+                    console.error('Supabase unlike error:', error);
                     addLogMessage('> ОШИБКА: не удалось снять лайк.');
                     return;
                 }
@@ -1665,14 +1832,14 @@
                     .from('project_likes')
                     .insert([{
                         project_id: String(projectId),
-                        user_id: user.id
+                        user_id: currentAnonymousUser.id
                     }]);
 
                 if (error) {
                     if (error.code === '23505') {
                         addLogMessage('> ЛАЙК УЖЕ УСТАНОВЛЕН.');
                     } else {
-                        console.error('Like insert error:', error);
+                        console.error('Supabase like insert error:', error);
                         addLogMessage('> ОШИБКА: не удалось поставить лайк.');
                     }
                     return;
@@ -1690,6 +1857,7 @@
     // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
     window.onload = async function() {
         startIntroAnimation();
+        await ensureAnonymousUser();
         await loadLikes();
         loadComments();
         // Добавляем первый лог сразу после загрузки
