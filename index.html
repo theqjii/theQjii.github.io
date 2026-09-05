@@ -474,83 +474,207 @@
             100% { background: repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 2px); transform: translateY(0); filter: contrast(1); }
         }
 
-        /* ===== СТИЛИ ПЛЕЕРА (правый нижний угол) ===== */
+        /* ===== ТЕРМИНАЛЬНЫЙ ПЛЕЕР ===== */
         #custom-player {
             position: fixed;
             right: 20px;
             bottom: 20px;
-            width: 300px;
-            background: var(--bg-window);
+            width: 340px;
+            background:
+                linear-gradient(rgba(20, 0, 0, 0.96), rgba(7, 0, 0, 0.98)),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 0, 0, 0.025) 0px,
+                    rgba(255, 0, 0, 0.025) 1px,
+                    transparent 1px,
+                    transparent 3px
+                );
             border: 2px solid var(--border);
-            padding: 10px;
+            padding: 0;
             z-index: 10001;
             font-family: 'VT323', monospace;
             color: var(--text);
-            box-shadow: 0 0 20px var(--border);
+            box-shadow:
+                0 0 18px rgba(139, 0, 0, 0.75),
+                inset 0 0 24px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
         }
+
+        #custom-player::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(
+                    rgba(255, 0, 0, 0.03) 50%,
+                    transparent 50%
+                );
+            background-size: 100% 4px;
+            opacity: 0.35;
+        }
+
         #custom-player .player-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-            border-bottom: 1px dashed var(--border);
-            padding-bottom: 5px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 10px;
         }
+
         #custom-player .player-title {
             color: var(--accent);
             font-size: 1.2rem;
+            letter-spacing: 0.04em;
+            text-shadow: 0 0 7px var(--accent);
         }
+
+        #custom-player .player-led {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            margin-right: 6px;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+            animation: player-led-blink 1.1s infinite steps(2, end);
+            vertical-align: middle;
+        }
+
+        @keyframes player-led-blink {
+            50% { opacity: 0.35; }
+        }
+
         #custom-player .player-close {
-            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
             color: var(--text-dim);
-            font-size: 1.2rem;
+            width: 24px;
+            height: 24px;
+            font-family: 'VT323', monospace;
+            font-size: 1.25rem;
+            line-height: 19px;
+            cursor: pointer;
         }
+
         #custom-player .player-close:hover {
-            color: var(--accent);
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
         }
+
+        #custom-player .player-track {
+            padding: 12px 12px 6px;
+        }
+
+        #custom-player .player-track-label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+            letter-spacing: 0.08em;
+        }
+
+        #custom-player .player-track-name {
+            color: var(--text-bright);
+            font-size: 1.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 0 4px rgba(255, 128, 128, 0.35);
+        }
+
         #custom-player audio {
-            width: 100%;
-            margin-bottom: 5px;
+            display: none;
         }
-        #custom-player .time-display {
+
+        #custom-player .player-time-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 4px 12px 7px;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+
+        #custom-player .player-time-row span:last-child {
+            text-align: right;
+        }
+
+        #custom-player .player-status {
+            color: var(--accent);
+            font-size: 0.88rem;
             text-align: center;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
+            letter-spacing: 0.04em;
         }
-        #custom-player .controls {
+
+        #custom-player .progress-bar {
+            width: calc(100% - 24px);
+            margin: 0 12px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.35));
+        }
+
+        #custom-player .player-main-controls {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 5px;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 12px 10px;
         }
+
         #custom-player .btn-control {
+            min-width: 42px;
+            height: 34px;
             background: var(--bg-header);
             border: 1px solid var(--border);
             color: var(--text-bright);
-            padding: 5px 10px;
+            padding: 4px 10px;
             cursor: pointer;
             font-family: 'VT323', monospace;
-            transition: 0.3s;
+            font-size: 1.1rem;
+            transition: 0.2s;
         }
+
         #custom-player .btn-control:hover {
             background: var(--accent);
             color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 11px var(--accent);
         }
-        #custom-player .volume-container {
-            display: flex;
+
+        #custom-player .btn-play {
+            min-width: 58px;
+            color: var(--accent);
+            font-size: 1.25rem;
+        }
+
+        #custom-player .volume-row {
+            display: grid;
+            grid-template-columns: auto auto 1fr;
+            gap: 7px;
             align-items: center;
-            gap: 5px;
-            margin-bottom: 5px;
+            border-top: 1px dashed var(--border);
+            padding: 8px 12px 10px;
+            background: rgba(0, 0, 0, 0.24);
         }
+
+        #custom-player .volume-label {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+
+        #custom-player .volume-symbol {
+            color: var(--accent);
+            font-size: 0.9rem;
+            text-shadow: 0 0 4px var(--accent);
+        }
+
         #custom-player .volume-slider {
             width: 100%;
-        }
-        #custom-player .progress-container {
-            margin-top: 5px;
-        }
-        #custom-player .progress-bar {
-            width: 100%;
             accent-color: var(--accent);
+            cursor: pointer;
         }
 
         /* Глитч-анимация заголовков при наведении */
@@ -794,6 +918,10 @@
                 border-left: none;
                 border-right: none;
                 border-bottom: none;
+            }
+
+            #custom-player .player-track-name {
+                font-size: 1.05rem;
             }
 
             .avatar {
@@ -1044,33 +1172,62 @@
     <!-- Эффект помех (вместо радиации) -->
     <div id="interference-overlay"></div>
 
-    <!-- ===== ВСТРОЕННЫЙ ПЛЕЕР (правый нижний угол) ===== -->
+    <!-- ===== ВСТРОЕННЫЙ ПЛЕЕР ===== -->
     <div id="custom-player">
         <div class="player-header">
-            <span class="player-title">> AUDIO::</span>
-            <div class="player-close" onclick="hidePlayer()">X</div>
+            <div class="player-title">
+                <span class="player-led"></span>
+                AUDIO::TERMINAL
+            </div>
+            <button class="player-close" onclick="hidePlayer()" aria-label="Закрыть плеер">×</button>
         </div>
-        
-        <audio id="audio-element" controls preload="metadata">
+
+        <div class="player-track">
+            <div class="player-track-label">NOW_PLAYING //</div>
+            <div class="player-track-name">TheQjii // WASTELAND SIGNAL</div>
+        </div>
+
+        <audio id="audio-element" preload="metadata">
             <source src="https://raw.githubusercontent.com/theqjii/theQjii.github.io/b61680c99c05ea60914826521e3de90363f27ca3/song.mp3" type="audio/mpeg">
             Ваш браузер не поддерживает аудио.
         </audio>
-        
-        <div class="time-display" id="time-display">00:00 / 00:00</div>
-        
-        <div class="controls">
-            <div class="btn-control" onclick="togglePlay()" id="play-pause-btn">▶</div>
-            <div class="btn-control" onclick="seekBackward()">-5s</div>
-            <div class="btn-control" onclick="seekForward()">+5s</div>
+
+        <div class="player-time-row">
+            <span id="time-current">00:00</span>
+            <span class="player-status" id="player-status">[ STOPPED ]</span>
+            <span id="time-duration">00:00</span>
         </div>
-        
-        <div class="volume-container">
-            <label>Громкость:</label>
-            <input type="range" min="0" max="1" step="0.1" value="1" class="volume-slider" oninput="setVolume(this.value)">
+
+        <input
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+            class="progress-bar"
+            id="player-progress"
+            aria-label="Прогресс трека"
+            oninput="seekTo(this.value)"
+        >
+
+        <div class="player-main-controls">
+            <button class="btn-control" onclick="seekBackward()" aria-label="Назад на 5 секунд">«5</button>
+            <button class="btn-control btn-play" onclick="togglePlay()" id="play-pause-btn" aria-label="Воспроизвести">▶</button>
+            <button class="btn-control" onclick="seekForward()" aria-label="Вперёд на 5 секунд">5»</button>
         </div>
-        
-        <div class="progress-container">
-            <input type="range" min="0" max="100" value="0" class="progress-bar" oninput="seekTo(this.value)">
+
+        <div class="volume-row">
+            <span class="volume-label">VOL</span>
+            <span class="volume-symbol">▮▮</span>
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="1"
+                class="volume-slider"
+                aria-label="Громкость"
+                oninput="setVolume(this.value)"
+            >
         </div>
     </div>
 
@@ -1660,61 +1817,97 @@
     // ===== ЛОГИКА ПЛЕЕРА =====
     const audio = document.getElementById('audio-element');
     const playPauseBtn = document.getElementById('play-pause-btn');
-    const progressBar = document.querySelector('.progress-bar');
-    const volumeSlider = document.querySelector('.volume-slider');
-    const timeDisplay = document.getElementById('time-display');
+    const progressBar = document.getElementById('player-progress');
+    const volumeSlider = document.querySelector('#custom-player .volume-slider');
+    const currentTimeEl = document.getElementById('time-current');
+    const durationTimeEl = document.getElementById('time-duration');
+    const playerStatus = document.getElementById('player-status');
 
-    function togglePlay() {
+    function formatTime(seconds) {
+        if (!Number.isFinite(seconds)) return '00:00';
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function updatePlayerUI() {
+        const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+        const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+
+        currentTimeEl.textContent = formatTime(current);
+        durationTimeEl.textContent = formatTime(duration);
+        progressBar.value = duration > 0 ? (current / duration) * 100 : 0;
+
         if (audio.paused) {
-            audio.play();
-            playPauseBtn.textContent = '⏸';
-        } else {
-            audio.pause();
             playPauseBtn.textContent = '▶';
+            playPauseBtn.setAttribute('aria-label', 'Воспроизвести');
+        } else {
+            playPauseBtn.textContent = '⏸';
+            playPauseBtn.setAttribute('aria-label', 'Пауза');
+        }
+
+        if (audio.ended) {
+            playerStatus.textContent = '[ ENDED ]';
+        } else if (!audio.paused) {
+            playerStatus.textContent = '[ PLAYING ]';
+        } else if (current > 0) {
+            playerStatus.textContent = '[ PAUSED ]';
+        } else {
+            playerStatus.textContent = '[ STOPPED ]';
         }
     }
 
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play().catch(error => {
+                console.error('Audio play error:', error);
+                addLogMessage('> AUDIO: не удалось запустить трек.');
+            });
+        } else {
+            audio.pause();
+        }
+        updatePlayerUI();
+    }
+
     function setVolume(value) {
-        audio.volume = value;
+        audio.volume = Math.max(0, Math.min(1, Number(value)));
     }
 
     function seekTo(percent) {
         if (audio.duration > 0) {
-            audio.currentTime = (percent / 100) * audio.duration;
+            audio.currentTime = (Number(percent) / 100) * audio.duration;
         }
+        updatePlayerUI();
     }
 
     function seekBackward() {
         audio.currentTime = Math.max(0, audio.currentTime - 5);
+        updatePlayerUI();
     }
 
     function seekForward() {
-        audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+        if (audio.duration > 0) {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+        }
+        updatePlayerUI();
     }
 
     function hidePlayer() {
         document.getElementById('custom-player').style.display = 'none';
         audio.pause();
+        updatePlayerUI();
     }
 
-    audio.addEventListener('timeupdate', function() {
-        if (audio.duration > 0) {
-            progressBar.value = (audio.currentTime / audio.duration) * 100;
-            let currentMinutes = Math.floor(audio.currentTime / 60);
-            let currentSeconds = Math.floor(audio.currentTime % 60);
-            let durationMinutes = Math.floor(audio.duration / 60);
-            let durationSeconds = Math.floor(audio.duration % 60);
-            
-            if (currentSeconds < 10) currentSeconds = '0' + currentSeconds;
-            if (durationSeconds < 10) durationSeconds = '0' + durationSeconds;
-            
-            timeDisplay.textContent = `${currentMinutes}:${currentSeconds} / ${durationMinutes}:${durationSeconds}`;
-        }
+    audio.addEventListener('loadedmetadata', updatePlayerUI);
+    audio.addEventListener('timeupdate', updatePlayerUI);
+    audio.addEventListener('play', updatePlayerUI);
+    audio.addEventListener('pause', updatePlayerUI);
+    audio.addEventListener('ended', updatePlayerUI);
+    audio.addEventListener('volumechange', () => {
+        volumeSlider.value = audio.volume;
     });
 
-    audio.addEventListener('ended', function() {
-        playPauseBtn.textContent = '▶';
-    });
+    updatePlayerUI();
 
     // ===== СИСТЕМА ОБЩИХ ЛАЙКОВ (SUPABASE) =====
     // Лайки общие для всех. Снять свой лайк можно благодаря
