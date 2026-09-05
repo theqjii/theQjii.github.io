@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -1348,6 +1349,7 @@
             const projectId = btn.dataset.project;
             const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
             const likesRef = db.ref('likes/' + projectId);
+            
             likesRef.transaction(current => {
                 if (isLiked) {
                     localStorage.setItem('liked_' + projectId, 'false');
@@ -1356,7 +1358,10 @@
                     localStorage.setItem('liked_' + projectId, 'true');
                     return (current || 0) + 1;
                 }
-            });
+            }).then(() => {
+                // Принудительно обновляем все кнопки после транзакции
+                loadLikes();
+            }).catch(err => console.error("Ошибка лайка:", err));
         }
 
         // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (FIREBASE) =====
@@ -1366,7 +1371,7 @@
             db.ref('comments/' + projectId).on('value', snapshot => {
                 let all = snapshot.val() || [];
                 if (!Array.isArray(all)) all = Object.values(all);
-                console.log(`Комментарии для ${projectId}:`, all); // для отладки
+                console.log(`Комментарии для ${projectId}:`, all);
                 commentsState[projectId] = {
                     all: all,
                     visible: 5
