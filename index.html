@@ -324,6 +324,16 @@
             color: #fff;
         }
 
+        .like-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .like-count {
+            display: inline-block;
+            min-width: 1ch;
+        }
+
         .links a { display: block; background: var(--bg-header); border: 2px solid var(--border); color: var(--text-bright); text-decoration: none; padding: 15px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; transition: 0.3s; }
         .links a:hover { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
 
@@ -873,12 +883,12 @@
                     <div class="project-item">
                         <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+1">
                         <p>Работа 1</p>
-                        <button class="like-btn" data-project="1" onclick="toggleLike(this)">❤ 0</button>
+                        <button class="like-btn" data-project="1" onclick="toggleLike(this)" aria-pressed="false" title="Поставить лайк">❤ <span class="like-count">0</span></button>
                     </div>
                     <div class="project-item">
                         <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+2">
                         <p>Работа 2</p>
-                        <button class="like-btn" data-project="2" onclick="toggleLike(this)">❤ 0</button>
+                        <button class="like-btn" data-project="2" onclick="toggleLike(this)" aria-pressed="false" title="Поставить лайк">❤ <span class="like-count">0</span></button>
                     </div>
                 </div>
                 <div class="cmd-container">
@@ -1515,41 +1525,150 @@
         playPauseBtn.textContent = '▶';
     });
 
-    // ===== СИСТЕМА ЛАЙКОВ =====
-    function loadLikes() {
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            const projectId = btn.dataset.project;
-            const likes = localStorage.getItem('likes_' + projectId) || 0;
-            const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-            btn.innerHTML = `❤ ${likes}`;
-            if (isLiked) btn.classList.add('liked');
-        });
+    // ===== СИСТЕМА ОБЩИХ ЛАЙКОВ (SUPABASE) =====
+    // Лайки общие для всех. Снять свой лайк можно благодаря
+    // анонимной сессии Supabase Auth.
+    let currentAnonymousUser = null;
+
+    async function ensureAnonymousUser() {
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+        if (!sessionError && sessionData?.session?.user) {
+            currentAnonymousUser = sessionData.session.user;
+            return currentAnonymousUser;
+        }
+
+        const { data, error } = await supabaseClient.auth.signInAnonymously();
+
+        if (error) {
+            console.error('Anonymous auth error:', error);
+            addLogMessage('> ОШИБКА AUTH: не удалось создать анонимную сессию.');
+            return null;
+        }
+
+        currentAnonymousUser = data.user;
+        return currentAnonymousUser;
     }
 
-    function toggleLike(btn) {
+    async function getLikeCount(projectId) {
+        const { count, error } = await supabaseClient
+            .from('project_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('project_id', String(projectId));
+
+        if (error) {
+            console.error('Supabase like count error:', error);
+            return 0;
+        }
+
+        return count || 0;
+    }
+
+    async function getOwnLike(projectId) {
+        if (!currentAnonymousUser) {
+            await ensureAnonymousUser();
+        }
+
+        if (!currentAnonymousUser) return null;
+
+        const { data, error } = await supabaseClient
+            .from('project_likes')
+            .select('id')
+            .eq('project_id', String(projectId))
+            .eq('user_id', currentAnonymousUser.id)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Supabase own like check error:', error);
+            return null;
+        }
+
+        return data || null;
+    }
+
+    async function updateLikeButton(btn) {
         const projectId = btn.dataset.project;
-        const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-        if (isLiked) {
-            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
-            likes = Math.max(0, likes - 1);
-            localStorage.setItem('likes_' + projectId, likes);
-            localStorage.setItem('liked_' + projectId, 'false');
-            btn.innerHTML = `❤ ${likes}`;
-            btn.classList.remove('liked');
-        } else {
-            let likes = parseInt(localStorage.getItem('likes_' + projectId) || '0');
-            likes++;
-            localStorage.setItem('likes_' + projectId, likes);
-            localStorage.setItem('liked_' + projectId, 'true');
-            btn.innerHTML = `❤ ${likes}`;
-            btn.classList.add('liked');
+        const [count, ownLike] = await Promise.all([
+            getLikeCount(projectId),
+            getOwnLike(projectId)
+        ]);
+
+        const countEl = btn.querySelector('.like-count');
+        if (countEl) countEl.textContent = count;
+
+        const liked = !!ownLike;
+        btn.classList.toggle('liked', liked);
+        btn.title = liked ? 'Снять лайк' : 'Поставить лайк';
+        btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+    }
+
+    async function loadLikes() {
+        const buttons = document.querySelectorAll('.like-btn');
+        for (const btn of buttons) {
+            await updateLikeButton(btn);
+        }
+    }
+
+    async function toggleLike(btn) {
+        const projectId = btn.dataset.project;
+
+        if (!currentAnonymousUser) {
+            await ensureAnonymousUser();
+        }
+
+        if (!currentAnonymousUser) return;
+
+        btn.disabled = true;
+
+        try {
+            const ownLike = await getOwnLike(projectId);
+
+            if (ownLike) {
+                const { error } = await supabaseClient
+                    .from('project_likes')
+                    .delete()
+                    .eq('id', ownLike.id)
+                    .eq('user_id', currentAnonymousUser.id);
+
+                if (error) {
+                    console.error('Supabase unlike error:', error);
+                    addLogMessage('> ОШИБКА: не удалось снять лайк.');
+                    return;
+                }
+
+                addLogMessage(`> ЛАЙК СНЯТ: проект ${projectId}.`);
+            } else {
+                const { error } = await supabaseClient
+                    .from('project_likes')
+                    .insert([{
+                        project_id: String(projectId),
+                        user_id: currentAnonymousUser.id
+                    }]);
+
+                if (error) {
+                    if (error.code === '23505') {
+                        addLogMessage('> ЛАЙК УЖЕ УСТАНОВЛЕН.');
+                    } else {
+                        console.error('Supabase like insert error:', error);
+                        addLogMessage('> ОШИБКА: не удалось поставить лайк.');
+                    }
+                    return;
+                }
+
+                addLogMessage(`> ЛАЙК ПОЛУЧЕН: проект ${projectId}.`);
+            }
+
+            await updateLikeButton(btn);
+        } finally {
+            btn.disabled = false;
         }
     }
 
     // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
-    window.onload = function() {
+    window.onload = async function() {
         startIntroAnimation();
-        loadLikes();
+        await ensureAnonymousUser();
+        await loadLikes();
         loadComments();
         // Добавляем первый лог сразу после загрузки
         setTimeout(() => {
