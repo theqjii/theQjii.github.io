@@ -1526,28 +1526,39 @@
     });
 
     // ===== СИСТЕМА ОБЩИХ ЛАЙКОВ (SUPABASE) =====
-    // Лайки общие для всех. Снять свой лайк можно благодаря
-    // анонимной сессии Supabase Auth.
+    // Общие лайки + возможность снять свой лайк.
     let currentAnonymousUser = null;
+    let anonymousAuthAttempted = false;
 
     async function ensureAnonymousUser() {
-        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (currentAnonymousUser) return currentAnonymousUser;
+        if (anonymousAuthAttempted) return null;
 
-        if (!sessionError && sessionData?.session?.user) {
-            currentAnonymousUser = sessionData.session.user;
+        anonymousAuthAttempted = true;
+
+        try {
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+
+            if (sessionData?.session?.user) {
+                currentAnonymousUser = sessionData.session.user;
+                return currentAnonymousUser;
+            }
+
+            const { data, error } = await supabaseClient.auth.signInAnonymously();
+
+            if (error) {
+                console.error('Anonymous auth error:', error);
+                addLogMessage('> AUTH: не удалось создать анонимную сессию. Проверь Anonymous Sign-Ins.');
+                return null;
+            }
+
+            currentAnonymousUser = data?.user || null;
             return currentAnonymousUser;
-        }
-
-        const { data, error } = await supabaseClient.auth.signInAnonymously();
-
-        if (error) {
-            console.error('Anonymous auth error:', error);
-            addLogMessage('> ОШИБКА AUTH: не удалось создать анонимную сессию.');
+        } catch (error) {
+            console.error('Anonymous auth exception:', error);
+            addLogMessage('> AUTH: ошибка подключения.');
             return null;
         }
-
-        currentAnonymousUser = data.user;
-        return currentAnonymousUser;
     }
 
     async function getLikeCount(projectId) {
@@ -1557,7 +1568,7 @@
             .eq('project_id', String(projectId));
 
         if (error) {
-            console.error('Supabase like count error:', error);
+            console.error('Like count error:', error);
             return 0;
         }
 
@@ -1565,33 +1576,28 @@
     }
 
     async function getOwnLike(projectId) {
-        if (!currentAnonymousUser) {
-            await ensureAnonymousUser();
-        }
-
-        if (!currentAnonymousUser) return null;
+        const user = await ensureAnonymousUser();
+        if (!user) return null;
 
         const { data, error } = await supabaseClient
             .from('project_likes')
             .select('id')
             .eq('project_id', String(projectId))
-            .eq('user_id', currentAnonymousUser.id)
+            .eq('user_id', user.id)
             .maybeSingle();
 
         if (error) {
-            console.error('Supabase own like check error:', error);
+            console.error('Own like error:', error);
             return null;
         }
 
-        return data || null;
+        return data;
     }
 
     async function updateLikeButton(btn) {
         const projectId = btn.dataset.project;
-        const [count, ownLike] = await Promise.all([
-            getLikeCount(projectId),
-            getOwnLike(projectId)
-        ]);
+        const count = await getLikeCount(projectId);
+        const ownLike = await getOwnLike(projectId);
 
         const countEl = btn.querySelector('.like-count');
         if (countEl) countEl.textContent = count;
@@ -1604,20 +1610,37 @@
 
     async function loadLikes() {
         const buttons = document.querySelectorAll('.like-btn');
+
+        // Числа работают даже если Auth временно недоступен.
         for (const btn of buttons) {
-            await updateLikeButton(btn);
+            const projectId = btn.dataset.project;
+            const count = await getLikeCount(projectId);
+            const countEl = btn.querySelector('.like-count');
+            if (countEl) countEl.textContent = count;
+        }
+
+        // Определяем состояние именно этого браузера только один раз.
+        await ensureAnonymousUser();
+
+        for (const btn of buttons) {
+            const projectId = btn.dataset.project;
+            const ownLike = await getOwnLike(projectId);
+            const liked = !!ownLike;
+            btn.classList.toggle('liked', liked);
+            btn.title = liked ? 'Снять лайк' : 'Поставить лайк';
+            btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
         }
     }
 
     async function toggleLike(btn) {
-        const projectId = btn.dataset.project;
+        const user = await ensureAnonymousUser();
 
-        if (!currentAnonymousUser) {
-            await ensureAnonymousUser();
+        if (!user) {
+            addLogMessage('> НЕЛЬЗЯ ИЗМЕНИТЬ ЛАЙК: Supabase Auth недоступен.');
+            return;
         }
 
-        if (!currentAnonymousUser) return;
-
+        const projectId = btn.dataset.project;
         btn.disabled = true;
 
         try {
@@ -1628,10 +1651,10 @@
                     .from('project_likes')
                     .delete()
                     .eq('id', ownLike.id)
-                    .eq('user_id', currentAnonymousUser.id);
+                    .eq('user_id', user.id);
 
                 if (error) {
-                    console.error('Supabase unlike error:', error);
+                    console.error('Unlike error:', error);
                     addLogMessage('> ОШИБКА: не удалось снять лайк.');
                     return;
                 }
@@ -1642,14 +1665,14 @@
                     .from('project_likes')
                     .insert([{
                         project_id: String(projectId),
-                        user_id: currentAnonymousUser.id
+                        user_id: user.id
                     }]);
 
                 if (error) {
                     if (error.code === '23505') {
                         addLogMessage('> ЛАЙК УЖЕ УСТАНОВЛЕН.');
                     } else {
-                        console.error('Supabase like insert error:', error);
+                        console.error('Like insert error:', error);
                         addLogMessage('> ОШИБКА: не удалось поставить лайк.');
                     }
                     return;
@@ -1667,7 +1690,6 @@
     // ===== ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ =====
     window.onload = async function() {
         startIntroAnimation();
-        await ensureAnonymousUser();
         await loadLikes();
         loadComments();
         // Добавляем первый лог сразу после загрузки
