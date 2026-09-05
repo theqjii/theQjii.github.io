@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheQjii // Терминал</title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ===== ОСНОВНЫЕ СТИЛИ ===== */
         :root {
             --bg-dark: #050000;
             --bg-window: rgba(20, 0, 0, 0.95);
@@ -208,25 +207,26 @@
             z-index: 10;
         }
 
+        /* ИСПРАВЛЕННАЯ АНИМАЦИЯ ОТКРЫТИЯ — не трогает transform окна */
         .open-animation {
             animation: crumple-open 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         @keyframes crumple-open {
-            0% { transform: scale(0.1) rotate(15deg) skew(20deg, 20deg); filter: blur(5px); opacity: 0.3; }
-            40% { transform: scale(0.8) rotate(-10deg) skew(10deg, 5deg); filter: blur(2px) contrast(200%); }
-            70% { transform: scale(1.05) rotate(3deg) skew(0deg, 0deg); filter: blur(0) contrast(120%); }
-            100% { transform: scale(1) rotate(0deg) skew(0deg, 0deg); filter: blur(0) contrast(100%); opacity: 1; }
+            0% { opacity: 0; filter: blur(5px); }
+            40% { opacity: 0.8; filter: blur(2px) contrast(200%); }
+            70% { opacity: 1; filter: blur(0) contrast(120%); }
+            100% { opacity: 1; filter: blur(0) contrast(100%); }
         }
 
         .crumpling {
             animation: crumple 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
         }
         @keyframes crumple {
-            0% { transform: scale(1) rotate(0); filter: blur(0); }
-            30% { transform: scale(0.95) rotate(5deg); filter: blur(1px) contrast(200%); }
-            60% { transform: scale(0.8) rotate(-10deg) skew(10deg, 5deg); filter: blur(2px) contrast(300%); }
-            100% { transform: scale(0.1) rotate(15deg) skew(20deg, 20deg); filter: blur(5px); opacity: 0.5; }
+            0% { opacity: 1; filter: blur(0); }
+            30% { opacity: 0.7; filter: blur(1px) contrast(200%); }
+            60% { opacity: 0.3; filter: blur(2px) contrast(300%); }
+            100% { opacity: 0; filter: blur(5px); }
         }
         .window.minimized { height: 40px; width: 200px; min-width: 200px; overflow: hidden; }
         .window.minimized .window-body { display: none; }
@@ -253,7 +253,7 @@
 
         .window-body { padding: 20px; overflow-y: auto; max-height: 80vh; position: relative; }
         
-        #main-window { left: 50px; top: 50px; width: 600px; display: none; }
+        #main-window { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 600px; display: none; }
 
         h1 { font-size: 3rem; margin: 0 0 10px 0; color: var(--accent); text-shadow: 2px 2px 0 #000, 0 0 10px var(--border); }
         .status-line { color: var(--text-dim); font-size: 1.4rem; border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-bottom: 20px; }
@@ -289,7 +289,6 @@
 
         #armory-window { left: 20%; top: 15%; width: 700px; }
         #bio-window { left: 30%; top: 25%; width: 400px; }
-        #radio-window { left: 25%; top: 20%; width: 500px; }
         
         .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .project-item { background: var(--bg-header); border: 2px solid var(--border); padding: 10px; transition: 0.3s; }
@@ -297,116 +296,6 @@
         .project-item img { width: 100%; height: 150px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(100%) contrast(120%); }
         .project-item:hover img { filter: grayscale(0%) contrast(100%); }
         .project-item p { text-align: center; color: var(--text-bright); }
-
-        /* Комментарии */
-        .comments-section {
-            margin-top: 15px;
-            border-top: 1px dashed var(--border);
-            padding-top: 10px;
-        }
-        .comments-section h4 {
-            margin: 0 0 10px;
-            color: var(--accent);
-            font-size: 1.2rem;
-        }
-        .comment-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            padding: 5px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border);
-        }
-        .comment-item {
-            background: rgba(0,0,0,0.3);
-            padding: 3px 8px;
-            margin-bottom: 5px;
-            font-size: 1rem;
-            color: var(--text-bright);
-            border-left: 3px solid var(--border);
-            word-break: break-word;
-        }
-        .comment-item .comment-author {
-            color: var(--accent);
-            font-weight: bold;
-        }
-        .comment-input-row {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-        .comment-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            border-bottom: 1px dashed var(--border);
-            color: var(--text);
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            outline: none;
-            padding: 5px;
-        }
-        .comment-input:focus {
-            border-bottom: 1px solid var(--accent);
-        }
-        .comment-btn {
-            background: var(--border);
-            border: 1px solid #000;
-            color: #fff;
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            padding: 5px 10px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .comment-btn:hover {
-            background: var(--accent);
-            color: #000;
-        }
-        .nickname-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 5px;
-        }
-        .nickname-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            border-bottom: 1px dashed var(--border);
-            color: var(--accent);
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            outline: none;
-            padding: 5px;
-        }
-        .nickname-input:focus {
-            border-bottom: 1px solid var(--accent);
-        }
-
-        .like-btn {
-            background: transparent;
-            border: 2px solid var(--border);
-            color: var(--text-bright);
-            font-family: 'VT323', monospace;
-            font-size: 1.2rem;
-            padding: 5px 15px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        .like-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
-        }
-
-        .like-btn.liked {
-            background: var(--border);
-            color: #fff;
-        }
 
         .links a { display: block; background: var(--bg-header); border: 2px solid var(--border); color: var(--text-bright); text-decoration: none; padding: 15px; margin-bottom: 15px; font-size: 1.5rem; text-align: center; transition: 0.3s; }
         .links a:hover { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
@@ -434,7 +323,7 @@
         /* ===== ПК-ФИЧИ ===== */
         #theme-toggle {
             position: fixed;
-            left: 20px;
+            right: 20px;
             bottom: 20px;
             background: var(--bg-header);
             border: 2px solid var(--border);
@@ -455,7 +344,7 @@
         #event-log {
             position: fixed;
             left: 20px;
-            bottom: 70px;
+            bottom: 360px;
             width: 300px;
             max-height: 150px;
             background: rgba(0,0,0,0.7);
@@ -562,7 +451,7 @@
                 height: auto;
             }
 
-            #main-window, #armory-window, #bio-window, #radio-window {
+            #main-window, #armory-window, #bio-window {
                 left: 5px !important;
                 top: 5px !important;
                 width: calc(100% - 10px) !important;
@@ -632,29 +521,12 @@
             }
         }
 
-        /* Пагинация */
-        .load-more-btn {
-            background: transparent;
-            border: 2px solid var(--border);
-            color: var(--text-bright);
-            font-family: 'VT323', monospace;
-            font-size: 1.1rem;
-            padding: 5px 10px;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-        }
-        .load-more-btn:hover {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-        }
-
-        /* Плеер */
+        /* Плеер — в правом нижнем углу */
         #custom-player {
             position: fixed;
-            bottom: 20px;
             right: 20px;
+            bottom: 20px;
+            left: auto;
             width: 300px;
             background: rgba(20, 0, 0, 0.95);
             border: 3px solid var(--border);
@@ -778,7 +650,6 @@
                     > ДОСТУПНЫЕ КОМАНДЫ:<br>
                     <code id="cmd-armory">/Armory</code> <span>- Открыть проекты (Оружейная)</span><br>
                     <code id="cmd-bio">/Bio</code> <span>- Соцсети (Связь)</span><br>
-                    <code id="cmd-radio">/Radio</code> <span>- Комментарии (Radio)</span><br>
                     <code id="cmd-help">/help</code> <span>- Показать этот список</span>
                 </div>
 
@@ -809,38 +680,10 @@
                     <div class="project-item">
                         <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+1">
                         <p>Работа 1</p>
-                        <button class="like-btn" data-project="1" onclick="toggleLike(this)">❤ 0</button>
-                        <!-- Комментарии к проекту -->
-                        <div class="comments-section" data-project="1">
-                            <h4>Комментарии</h4>
-                            <div class="comment-list" id="comments-1"></div>
-                            <button class="load-more-btn" id="more-1" onclick="loadMoreComments(1)">Показать ещё</button>
-                            <div class="nickname-row">
-                                <input type="text" class="nickname-input" id="nickname-1" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
-                            </div>
-                            <div class="comment-input-row">
-                                <input type="text" class="comment-input" id="comment-input-1" placeholder="Ваш комментарий..." />
-                                <button class="comment-btn" onclick="addProjectComment(1)">Добавить</button>
-                            </div>
-                        </div>
                     </div>
                     <div class="project-item">
                         <img src="https://via.placeholder.com/300x200/2a0000/ff0000?text=ФОТО+2">
                         <p>Работа 2</p>
-                        <button class="like-btn" data-project="2" onclick="toggleLike(this)">❤ 0</button>
-                        <!-- Комментарии к проекту -->
-                        <div class="comments-section" data-project="2">
-                            <h4>Комментарии</h4>
-                            <div class="comment-list" id="comments-2"></div>
-                            <button class="load-more-btn" id="more-2" onclick="loadMoreComments(2)">Показать ещё</button>
-                            <div class="nickname-row">
-                                <input type="text" class="nickname-input" id="nickname-2" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
-                            </div>
-                            <div class="comment-input-row">
-                                <input type="text" class="comment-input" id="comment-input-2" placeholder="Ваш комментарий..." />
-                                <button class="comment-btn" onclick="addProjectComment(2)">Добавить</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="cmd-container">
@@ -876,38 +719,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- ОКНО 4: RADIO -->
-        <div class="window" id="radio-window">
-            <div class="window-header">
-                <span class="window-title glitch-hover">TheQjii :: Radio</span>
-                <div class="window-controls">
-                    <div class="btn" onclick="minimizeWindow('radio-window')">-</div>
-                    <div class="btn" onclick="closeWindow('radio-window')">X</div>
-                </div>
-            </div>
-            <div class="window-body">
-                <div class="lock-overlay">
-                    <div class="lock-icon">
-                        <img src="https://img.icons8.com/ios-filled/100/ff0000/lock--v1.png" alt="Замок">
-                    </div>
-                </div>
-                <div class="status-line">> Комментарии (Radio)</div>
-                <div class="comment-list" id="comments-radio"></div>
-                <button class="load-more-btn" id="more-radio" onclick="loadMoreComments('radio')">Показать ещё</button>
-                <div class="nickname-row">
-                    <input type="text" class="nickname-input" id="nickname-radio" placeholder="Ваш ник..." oninput="saveNickname(this.value)" />
-                </div>
-                <div class="comment-input-row">
-                    <input type="text" class="comment-input" id="comment-input-radio" placeholder="Ваш комментарий..." />
-                    <button class="comment-btn" onclick="addRadioComment()">Добавить</button>
-                </div>
-                <div class="cmd-container">
-                    > Введите: <input type="text" id="radio-cmd" class="terminal-input" placeholder="/back" autocomplete="off" />
-                    <span>_</span>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Кнопка смены темы (только ПК) -->
@@ -927,7 +738,7 @@
     <!-- Эффект радиации (только ПК) -->
     <div id="radiation-overlay"></div>
 
-    <!-- Плеер -->
+    <!-- Плеер (справа внизу) -->
     <div id="custom-player">
         <div class="player-header">
             <span class="player-title">> AUDIO::</span>
@@ -953,11 +764,6 @@
     </div>
 
     <script>
-        // ===== SUPABASE CONFIG =====
-        const SUPABASE_URL = 'https://raudoebisazxvcqjcj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_OFn5WN8eZ1Kguz78J4l43Q_ON89kMTr';
-        let sb = null; // Используем sb, чтобы избежать конфликта имён
-
         // ===== БАЗОВЫЕ ПЕРЕМЕННЫЕ =====
         const introImages = [
             "https://cdn.phototourl.com/free/2026-09-03-98f54670-6017-44fb-9cc7-673f18919a99.png", 
@@ -1018,7 +824,9 @@
                 mainWin.classList.add('open-animation');
                 bringToFront(mainWin);
 
-                // Показываем прогресс-бар загрузки
+                // Сбрасываем transform, чтобы окно точно встало в центр
+                mainWin.style.transform = 'translate(-50%, -50%)';
+
                 showProgressBar();
 
                 setTimeout(() => {
@@ -1123,6 +931,9 @@
                 const header = win.querySelector('.window-header');
                 header.addEventListener('mousedown', (e) => {
                     bringToFront(win);
+                    // Сбрасываем transform, чтобы перетаскивание работало корректно
+                    win.style.transform = 'none';
+                    
                     let shiftX = e.clientX - win.getBoundingClientRect().left;
                     let shiftY = e.clientY - win.getBoundingClientRect().top;
 
@@ -1155,6 +966,7 @@
                 win.style.top = '5px';
                 win.style.width = 'calc(100% - 10px)';
                 win.style.height = '90vh';
+                win.style.transform = 'none'; // сбрасываем transform на мобильных
             }
 
             const lock = win.querySelector('.lock-overlay');
@@ -1196,7 +1008,6 @@
             const map = {
                 '/armory': 'cmd-armory',
                 '/bio': 'cmd-bio',
-                '/radio': 'cmd-radio',
                 '/help': 'cmd-help'
             };
             const id = map[cmd];
@@ -1221,12 +1032,8 @@
                     openWindow('bio-window');
                     highlightCommand('/bio');
                 }
-                else if (val === '/radio') {
-                    openWindow('radio-window');
-                    highlightCommand('/radio');
-                }
                 else if (val === '/help') {
-                    this.value = 'Доступно: /armory, /bio, /radio';
+                    this.value = 'Доступно: /armory, /bio';
                     highlightCommand('/help');
                 }
                 else {
@@ -1248,14 +1055,6 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (this.value.trim().toLowerCase() === '/back') closeWindow('bio-window');
-                else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
-            }
-        });
-
-        document.getElementById('radio-cmd').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (this.value.trim().toLowerCase() === '/back') closeWindow('radio-window');
                 else { this.value = 'Ошибка'; setTimeout(() => { this.value = ''; }, 1000); }
             }
         });
@@ -1319,168 +1118,9 @@
             playPauseBtn.textContent = '▶';
         });
 
-        // ===== ЛАЙКИ (SUPABASE) =====
-        async function loadLikes() {
-            if (!sb) return;
-            const { data, error } = await sb.from('likes').select('project_id, count');
-            if (error) {
-                console.error('Ошибка загрузки лайков:', error);
-                return;
-            }
-            const likesData = {};
-            data.forEach(row => likesData[row.project_id] = row.count);
-            document.querySelectorAll('.like-btn').forEach(btn => {
-                const projectId = btn.dataset.project;
-                const likes = likesData[projectId] || 0;
-                const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-                btn.innerHTML = `❤ ${likes}`;
-                btn.classList.toggle('liked', isLiked);
-            });
-        }
-
-        async function toggleLike(btn) {
-            if (!sb) return;
-            const projectId = btn.dataset.project;
-            const isLiked = localStorage.getItem('liked_' + projectId) === 'true';
-
-            if (isLiked) {
-                const { error } = await sb.rpc('decrement_like', { proj_id: projectId });
-                if (error) console.error('Ошибка уменьшения лайка:', error);
-                localStorage.setItem('liked_' + projectId, 'false');
-            } else {
-                const { error } = await sb.rpc('increment_like', { proj_id: projectId });
-                if (error) console.error('Ошибка увеличения лайка:', error);
-                localStorage.setItem('liked_' + projectId, 'true');
-            }
-            loadLikes();
-        }
-
-        // ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ (SUPABASE) =====
-        let commentsState = {};
-
-        async function loadComments(projectId) {
-            if (!sb) return;
-            const { data, error } = await sb
-                .from('comments')
-                .select('*')
-                .eq('project_id', projectId)
-                .order('created_at', { ascending: false })
-                .limit(100);
-
-            if (error) {
-                console.error('Ошибка загрузки комментариев:', error);
-                return;
-            }
-
-            data.reverse();
-            commentsState[projectId] = {
-                all: data,
-                visible: 5
-            };
-            renderComments(projectId);
-        }
-
-        function renderComments(projectId) {
-            const state = commentsState[projectId];
-            if (!state) return;
-            const list = document.getElementById('comments-' + projectId);
-            list.innerHTML = '';
-            if (state.all.length === 0) {
-                list.innerHTML = '<div style="color: var(--text-dim);">Нет комментариев</div>';
-                return;
-            }
-            const start = Math.max(0, state.all.length - state.visible);
-            const toShow = state.all.slice(start);
-            toShow.forEach(comment => {
-                const div = document.createElement('div');
-                div.className = 'comment-item';
-                const name = comment.name || 'Аноним';
-                div.innerHTML = '<span class="comment-author">' + escapeHtml(name) + ':</span> ' + escapeHtml(comment.text);
-                list.appendChild(div);
-            });
-            const moreBtn = document.getElementById('more-' + projectId);
-            if (moreBtn) {
-                moreBtn.style.display = state.all.length > state.visible ? 'block' : 'none';
-            }
-        }
-
-        function loadMoreComments(projectId) {
-            if (!commentsState[projectId]) return;
-            commentsState[projectId].visible += 5;
-            renderComments(projectId);
-        }
-
-        async function addProjectComment(projectId) {
-            if (!sb) return;
-            const nicknameInput = document.getElementById('nickname-' + projectId);
-            const commentInput = document.getElementById('comment-input-' + projectId);
-            const name = nicknameInput ? nicknameInput.value.trim() : 'Аноним';
-            const text = commentInput.value.trim();
-            if (!text) return;
-            saveNickname(name);
-            const { error } = await sb
-                .from('comments')
-                .insert([{ project_id: projectId, name, text }]);
-            if (error) {
-                console.error('Ошибка добавления комментария:', error);
-                return;
-            }
-            commentInput.value = '';
-            loadComments(projectId);
-        }
-
-        function addRadioComment() {
-            addProjectComment('radio');
-        }
-
-        function saveNickname(value) {
-            localStorage.setItem('user_nickname', value);
-            document.querySelectorAll('.nickname-input').forEach(input => { input.value = value; });
-        }
-
-        function loadNickname() {
-            const nickname = localStorage.getItem('user_nickname') || '';
-            document.querySelectorAll('.nickname-input').forEach(input => { input.value = nickname; });
-        }
-
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
-
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         window.onload = function() {
             startIntroAnimation();
-            // Безопасное подключение Supabase + анонимный вход
-            try {
-                if (typeof supabase !== 'undefined') {
-                    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    // Выполняем анонимный вход, чтобы получить доступ к базе
-                    sb.auth.signInAnonymously()
-                        .then(() => {
-                            console.log("Анонимный вход выполнен!");
-                            loadLikes();
-                            loadNickname();
-                            document.querySelectorAll('.comments-section').forEach(section => {
-                                const pid = section.dataset.project;
-                                loadComments(pid);
-                            });
-                            loadComments('radio');
-                        })
-                        .catch(err => {
-                            console.error("Ошибка анонимного входа:", err);
-                        });
-                } else {
-                    console.error("Библиотека Supabase не загрузилась (CDN заблокирован)");
-                }
-            } catch (e) {
-                console.error("Ошибка подключения Supabase:", e);
-            }
-
-            if (window.innerWidth > 768) {
-                setTimeout(() => addLogMessage("> Система загружена. Ожидание команды..."), 1500);
-            }
         };
     </script>
 </body>
